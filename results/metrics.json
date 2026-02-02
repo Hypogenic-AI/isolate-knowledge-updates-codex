@@ -1,0 +1,51 @@
+{
+  "meta": {
+    "timestamp": "2026-02-01T21:06:37.356970Z",
+    "model": "Qwen/Qwen2.5-0.5B",
+    "device": "cuda",
+    "seed": 42,
+    "torch": "2.10.0+cu128",
+    "transformers": "5.0.0"
+  },
+  "results": {
+    "baseline": {
+      "metrics": {}
+    },
+    "full_finetune": {
+      "metrics": {
+        "target_success": 1.0,
+        "paraphrase_success": 1.0,
+        "locality": 0.0,
+        "arithmetic_other_accuracy": 0.06060606060606061
+      },
+      "train_steps": 80,
+      "lr": 0.0005,
+      "use_lora": false,
+      "train_examples": 64
+    },
+    "lora_edit": {
+      "metrics": {
+        "target_success": 1.0,
+        "paraphrase_success": 1.0,
+        "locality": 0.03,
+        "arithmetic_other_accuracy": 0.06060606060606061
+      },
+      "train_steps": 80,
+      "lr": 0.0005,
+      "use_lora": true,
+      "train_examples": 64
+    },
+    "regularized": {
+      "metrics": {
+        "target_success": 1.0,
+        "paraphrase_success": 0.85,
+        "locality": 0.13,
+        "arithmetic_other_accuracy": 0.9494949494949495
+      },
+      "train_steps": 120,
+      "lr": 0.0003,
+      "use_lora": true,
+      "train_examples": 96
+    }
+  }
+}

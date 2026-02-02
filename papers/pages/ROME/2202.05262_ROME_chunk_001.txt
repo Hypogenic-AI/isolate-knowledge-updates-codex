@@ -1,0 +1,222 @@
+Locating and Editing Factual Associations in GPT
+Kevin Meng∗
+MIT CSAIL
+David Bau∗
+Northeastern University
+Alex Andonian
+MIT CSAIL
+Yonatan Belinkov†
+Technion – IIT
+Abstract
+We analyze the storage and recall of factual associations in autoregressive trans-
+former language models, ﬁnding evidence that these associations correspond to
+localized, directly-editable computations. We ﬁrst develop a causal intervention
+for identifying neuron activations that are decisive in a model’s factual predictions.
+This reveals a distinct set of steps in middle-layer feed-forward modules that me-
+diate factual predictions while processing subject tokens. To test our hypothesis
+that these computations correspond to factual association recall, we modify feed-
+forward weights to update speciﬁc factual associations using Rank-One Model
+Editing (ROME). We ﬁnd that ROME is effective on a standard zero-shot relation
+extraction (zsRE) model-editing task. We also evaluate ROME on a new dataset
+of difﬁcult counterfactual assertions, on which it simultaneously maintains both
+speciﬁcity and generalization, whereas other methods sacriﬁce one or another. Our
+results conﬁrm an important role for mid-layer feed-forward modules in storing fac-
+tual associations and suggest that direct manipulation of computational mechanisms
+may be a feasible approach for model editing. The code, dataset, visualizations, and
+an interactive demo notebook are available at https://rome.baulab.info/.
+1 Introduction
+Where does a large language model store its facts? In this paper, we report evidence that factual
+associations in GPT correspond to a localized computation that can be directly edited.
+Large language models can predict factual statements about the world (Petroni et al., 2019; Jiang
+et al., 2020; Roberts et al., 2020). For example, given the preﬁx “The Space Needle is located in the
+city of,” GPT will reliably predict the true answer: “ Seattle” (Figure 1a). Factual knowledge has been
+observed to emerge in both autoregressive GPT models (Radford et al., 2019; Brown et al., 2020) and
+masked BERT models (Devlin et al., 2019).
+In this paper, we investigate how such factual associations are stored within GPT-like autoregressive
+transformer models. Although many of the largest neural networks in use today are autoregressive,
+the way that they store knowledge remains under-explored. Some research has been done for masked
+models (Petroni et al., 2019; Jiang et al., 2020; Elazar et al., 2021a; Geva et al., 2021; Dai et al.,
+2022; De Cao et al., 2021), but GPT has architectural differences such as unidirectional attention and
+generation capabilities that provide an opportunity for new insights.
+We use two approaches. First, we trace the causal effects of hidden stateactivations within GPT using
+causal mediation analysis (Pearl, 2001; Vig et al., 2020b) to identify the speciﬁc modules that mediate
+recall of a fact about a subject (Figure 1). Our analysis reveals that feedforward MLPs at a range of
+middle layers are decisive when processing the last token of the subject name (Figures 1b,2b,3).
+Second, we test this ﬁnding in model weights by introducing a Rank-One Model Editing method
+(ROME) to alter the parameters that determine a feedfoward layer’s behavior at the decisive token.
+∗Equal contribution. Correspondence to mengk@mit.edu, davidbau@northeastern.edu.
+†Supported by the Viterbi Fellowship in the Center for Computer Engineering at the Technion.
+36th Conference on Neural Information Processing Systems (NeurIPS 2022).
+arXiv:2202.05262v5  [cs.CL]  13 Jan 2023
+Seattle
+(correct output)
+downtown
+in
+is
+le
+Need
+Space
+The
+Clean
+run
+(a)
+Corrupted
+subject
+run
+(b)
+Patch
+clean states
+(c)
+downtown
+in
+is
+le*
+Need*
+Space*
+The*
+****
+?
+(corrupted output)
+hi
+(l) state
+attention
+MLP
+Note when
+output is fixed
+(d)
+example flow*corrupted
+embedding
+early site
+late site
+(e) (f)
+ (g)
+early site
+late site
+Figure 1: Causal Traces compute the causal effect of neuron activations by running the network twice: (a)
+once normally, and (b) once where we corrupt the subject token and then (c) restore selected internal activations
+to their clean value. (d) Some sets of activations cause the output to return to the original prediction; the light
+blue path shows an example of information ﬂow. The causal impact on output probability is mapped for the
+effect of (e) each hidden state on the prediction, (f) only MLP activations, and (g) only attention activations.
+Despite the simplicity of the intervention, we ﬁnd that ROME is similarly effective to other model-
+editing approaches on a standard zero-shot relation extraction benchmark (Section 3.2).
+To evaluate ROME’s impact on more difﬁcult cases, we introduce a dataset of counterfactual assertions
+(Section 3.3) that would not have been observed in pretraining. Our evaluations (Section 3.4) conﬁrm
+that midlayer MLP modules can store factual associations that generalize beyond speciﬁc surface
+forms, while remaining speciﬁc to the subject. Compared to previous ﬁne-tuning (Zhu et al., 2020),
+interpretability-based (Dai et al., 2022), and meta-learning (Mitchell et al., 2021; De Cao et al., 2021)
+methods, ROME achieves good generalization and speciﬁcity simultaneously, whereas previous
+approaches sacriﬁce one or the other.
+2 Interventions on Activations for Tracing Information Flow
+To locate facts within the parameters of a large pretrained autoregressive transformer, we begin by
+analyzing and identifying the speciﬁc hidden states that have the strongest causal effect on predictions
+of individual facts. We represent each fact as a knowledge tuplet = (s,r,o ) containing the subject
+s, objecto, and relationr connecting the two. Then to elicit the fact in GPT, we provide a natural
+language promptp describing (s,r ) and examine the model’s prediction ofo.
+An autoregressive transformer language modelG :X→Y over vocabularyV maps a token sequence
+x = [x1,...,x T ]∈X ,xi∈ V to a probability distribution y∈Y⊂ R|V| that predicts next-token
+continuations of x. Within the transformer, the ith token is embedded as a series of hidden state
+vectorsh(l)
+i , beginning withh(0)
+i = emb(xi) + pos(i)∈ RH. The ﬁnal outputy = decode(h(L)
+T ) is
+read from the last hidden state.
+We visualize the internal computation ofG as a grid (Figure 1a) of hidden statesh(l)
+i in which each
+layerl (left→ right) adds global attention a(l)
+i and local MLP m(l)
+i contributions computed from
+previous layers, and where each tokeni (top→ bottom) attends to previous states from other tokens.
+Recall that, in the autoregressive case, tokens only draw information from past (above) tokens:
+h(l)
+i =h(l−1)
+i +a(l)
+i +m(l)
+i
+a(l)
+i = attn(l)
+(
+h(l−1)
+1 ,h (l−1)
+2 ,...,h (l−1)
+i
+)
+(1)
+m(l)
+i =W (l)
+projσ
+(
+W (l)
+f cγ
+(
+a(l)
+i +h(l−1)
+i
+))
+.
+2
+early site
+Detail in
+Figure 3
+late site
+early site
+late site
+(a) (b) (c)
+Figure 2: Average Indirect Effectof individual model components over a sample of 1000 factual statements
+reveals two important sites. (a) Strong causality at a ‘late site’ in the last layers at the last token is unsurprising,
+but strongly causal states at an ‘early site’ in middle layers at the last subject token is a new discovery. (b) MLP
+contributions dominate the early site. (c) Attention is important at the late site. Appendix B, Figure 7 shows
+these heatmaps as line plots with 95% conﬁdence intervals.
+Each layer’s MLP is a two-layer neural network parameterized by matricesW (l)
+proj andW (l)
+f c , with
+rectifying nonlinearityσ and normalizing nonlinearityγ. For further background on transformers,
+we refer to Vaswani et al. (2017).3
+2.1 Causal Tracing of Factual Associations
+The grid of states (Figure 1) forms a causal graph (Pearl, 2009) describing dependencies between the
+hidden variables. This graph contains many paths from inputs on the left to the output (next-word
+prediction) at the lower-right, and we wish to understand if there are speciﬁc hidden state variables
+that are more important than others when recalling a fact.
+As Vig et al. (2020b) have shown, this is a natural case forcausal mediation analysis, which quantiﬁes
+the contribution of intermediate variables in causal graphs (Pearl, 2001). To calculate each state’s
+contribution towards a correct factual prediction, we observe all ofG’s internal activations during
+three runs: a clean run that predicts the fact, a corrupted run where the prediction is damaged, and a
+corrupted-with-restoration run that tests the ability of a single state to restore the prediction.
+• In the clean run , we pass a factual prompt x into G and collect all hidden activations
+{h(l)
+i |i∈ [1,T ],l∈ [1,L ]}. Figure 1a provides an example illustration with the prompt: “The
+Space Needle is in downtown ”, for which the expected completion iso = “Seattle”.
+• In the baseline corrupted run, the subject is obfuscated from G before the network runs. Con-
+cretely, immediately afterx is embedded as [h(0)
+1 ,h (0)
+2 ,...,h (0)
+T ], we seth(0)
+i :=h(0)
+i +ϵ for all
+indicesi that correspond to the subject entity, whereϵ∼N (0;ν)4; .G is then allowed to continue
+normally, giving us a set of corrupted activations{h(l)
+i∗ |i∈ [1,T ],l∈ [1,L ]}. Because G loses
+some information about the subject, it will likely return an incorrect answer (Figure 1b).
+• The corrupted-with-restoration run, letsG run computations on the noisy embeddings as in the
+corrupted baseline, except at some token ˆi and layer ˆl. There, we hook G so that it is forced to
+output the clean stateh(ˆl)
+ˆi ; future computations execute without further intervention. Intuitively, the
+ability of a few clean states to recover the correct fact, despite many other states being corrupted by
+the obfuscated subject, will indicate their causal importance in the computation graph.
+Let P[o], P∗[o], and P∗, clean h(l)
+i [o] denote the probability of emitting o under the clean, corrupted,
+and corrupted-with-restoration runs, respectively; dependence on the inputx is omitted for notational
+simplicity. The total effect (TE) is the difference between these quantities: TE = P[o]− P∗[o].
+The indirect effect (IE) of a speciﬁc mediating stateh(l)
+i is deﬁned as the difference between the
+probability ofo under the corrupted version and the probability when that state is set to its clean
+version, while the subject remains corrupted: IE = P∗, clean h(l)
+i [o]− P∗[o]. Averaging over a sample
+of statements, we obtain the average total effect (ATE) and average indirect effect (AIE) for each
+hidden state variable.5
+3Eqn. 1 calculates attention sequentially after the MLP module as in Brown et al. (2020). Our methods also
+apply to GPT variants such as Wang & Komatsuzaki (2021) that put attention in parallel to the MLP.
+4We selectν to be 3 times larger than the empirical standard deviation of embeddings; see Appendix B.1 for
+details, and see Appendix B.4 for an analysis of other corruption rules.
+5One could also compute the direct effect, which ﬂows through other model components besides the chosen
+mediator. However, we found this effect to be noisy and uninformative, in line with results by Vig et al. (2020b).
+3

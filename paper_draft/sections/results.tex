@@ -1,0 +1,15 @@
+\section{Results}
+\label{sec:results}
+
+\para{{\bf main results.}} \Tabref{tab:main_results} summarizes edit success, paraphrase generalization, locality, and arithmetic stability. All three edits achieve perfect target success (1.00). Paraphrase success is also perfect for \fullft and \lora, while \reglora drops to 0.85 due to the stability constraint. The largest gap is in locality: outputs match the baseline for only 0.00--0.13 of unrelated prompts, far below the intended locality criterion. \reglora improves arithmetic accuracy on other sums to 0.95, a 0.89 absolute gain over \fullft and \lora.
+
+\para{{\bf metric comparison.}} \Figref{fig:metric_comparison} visualizes the same metrics and highlights the trade-off: regularization increases arithmetic stability but fails to preserve unrelated outputs. We also observe a qualitative failure mode where unrelated prompts often degenerate to repetitive ``5'' outputs after naive edits.
+
+\input{tables/main_results}
+
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=0.95\linewidth]{figures/metric_comparison.png}
+    \caption{Comparison of target success, paraphrase success, locality, and arithmetic accuracy across edit variants. Regularization improves arithmetic stability but does not recover locality.}
+    \label{fig:metric_comparison}
+\end{figure}

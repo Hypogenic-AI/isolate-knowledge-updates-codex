@@ -1,0 +1,396 @@
+Published as a conference paper at ICLR 2023
+C E VALUATION METRICS
+C.1 F OR ZS RE
+For consistency with previous works that use the zsRE task (Mitchell et al., 2021; Meng et al., 2022),
+we report the same three probability tests:
+• Efficacy is the proportion of edits that G recalls with top-1 accuracy. Note that the prompt matches
+exactly what the edit method sees at runtime:
+Ei
+
+oi = argmax
+xE
+PG [xE | p(si, ri)]
+
+. (21)
+• Paraphrase is the accuracy on rephrasings of the original statement:
+Ei
+
+Ep∈paraphrases(si,ri)
+
+oi = argmax
+xE
+PG [xE | p]
+
+. (22)
+• Specificity is the proportion of neighborhood prompts that the model gets correct. In COUNTER -
+FACT, all such prompts have the same correct answer oc
+i:
+Ei
+
+Ep∈neighborhood prompts(si,ri)
+
+oc
+i = argmax
+xE
+PG [xE | p]
+
+. (23)
+We also report an aggregated Score: the harmonic mean of Efficacy, Paraphrase, and Specificity.
+C.2 F OR COUNTER FACT
+COUNTER FACT contains an assortment of prompts and texts for evaluating model rewrites (Figure 14).
+This section provides formal definitions for each COUNTER FACT metric. First, the probability tests:
+• Efficacy Success (ES) is the proportion of cases where oi exceeds oc
+i in probability. Note that the
+prompt matches exactly what the edit method sees at runtime:
+Ei [PG [oi | p(si, ri)] > PG [oc
+i | p(si, ri)]] . (24)
+• Paraphrase Success (PS) is the proportion of cases where oi exceeds oc
+i in probability on
+rephrasings of the original statement:
+Ei
+
+Ep∈paraphrases(si,ri) [PG [oi | p] > PG [oc
+i | p]]
+
+. (25)
+• Neighborhood Success (NS) is the proportion of neighborhood prompts where the models assigns
+higher probability to the correct fact:
+Ei
+
+Ep∈neighborhood prompts(si,ri) [PG [oi | p] < PG [oc
+i | p]]
+
+. (26)
+• Editing Score (S), is the harmonic mean of ES, PS, and NS.
+Now, the generation tests:
+• Reference Score (RS) measures the consistency of G’s free-form generations. To compute it, we
+first prompt G with the subject s, then compute TF-IDF vectors for both G(s) and a reference
+Wikipedia text about o; RS is defined as their cosine similarity. Intuitively, G(s) will match better
+with o’s reference text if it has more consistent phrasing and vocabulary.
+• We also check for excessive repetition (a common failure case with model editing) using Genera-
+tion Entropy (GE), which relies on the entropy of n-gram distributions:
+−
+ 
+2
+3
+X
+k
+f2(k) log2 f2(k) + 4
+3
+X
+k
+f3(k) log2 f3(k)
+!
+. (27)
+Here, fn(·) is the n-gram frequency distribution.
+16
+Published as a conference paper at ICLR 2023
+D E DITING DIFFERENT CATEGORIES OF FACTS TOGETHER
+For an edit (s, r, o), r associates a subject s and object o. Both s and o have their associated types τ(s)
+and τ(o). For example, r = “is a citizen of” is an association between a Person and Country.
+We say that τ(s1) and s2 are diverse if τ(s1) ̸= ( τ(s2)), and similar otherwise. The definition
+follows similarly for objects. For any relation pair (r1, r2), we sample from COUNTER FACT a set of
+edits Emix = {(s, r, o) | r ∈ { r1, r2}}, such that numbers of edits for each relation are equal. We
+compare MEMIT’s performance on the set of editsEmix in four pairs of relations that have different
+levels of diversity between them. Each relation is followed by its corresponding relation_id in
+WikiData:
+(a) Subject different ( τ(s1) ̸= τ(s2)), Object different (τ(o1) ̸= τ(o2)):
+(τ(s1) = Person, r1 = citizen of (P27), τ(o1) = Country),
+(τ(s2) = Country, r2 = official language (P37), τ(o2) = Language)
+(b) Subject similar ( τ(s1) = τ(s2)), Object different (τ(o1) ̸= τ(o2)):
+(τ(s1) = Person, r1 = plays position in sport (P413), τ(o1) = Sport position ),
+(τ(s2) = Person, r2 = native language (P1412), τ(o2) = Language)
+(c) Subject different ( τ(s1) ̸= τ(s2)), Object similar (o1 = τ(o2)):
+(τ(s1) = Place, r1 = located in (P17), τ(o1) = Country),
+(τ(s2) = Item/Product, r2 = country of origin(P495), τ(o2) = Country)
+(d) Subject similar ( τ(s1) = τ(s2)), Object similar (τ(o1) = τ(o2)):
+(τ(s1) = Person, r1 = citizen of (P27), τ(o1) = Country),
+(τ(s2) = Person, r2 = works in (P937), τ(o2) = City/Country)
+Figure D depicts MEMIT rewrite performance in these four scenarios. We find that the effectiveness
+of Emix closely follows the average of the individual splits. Therefore, the presence of diversity in
+the edits (or lack thereof) does not tangibly influence MEMIT’s performance.
+E D EMONSTRATIONS
+This section provides two case studies, in which we apply MEMIT to mass-edit new or corrected
+memories into GPT-J (6B).
+Knowledge freshness. On November 8th, 2022, the United States held elections for 435 con-
+gressional seats, 36 governor seats, and 35 senator seats, several of which changed hands. We
+applied MEMIT to incorporate the election results into GPT-J in the form of (congressperson,
+elected from, district) and (governor/senator, elected from, state) .4
+The MEMIT edit attained 100% efficacy (ES) and 94% generalization (PS).
+Application in a specialized knowldge domain. For a second application, we used MEMIT to
+create a model with specialized knowledge of amateur astronomy. We scraped the names of stars
+that were referenced more than 100 times from WikiData and belong to one of the 18 constellations
+named below.
+Andromeda, Aquarius, Cancer, Cassiopeia, Gemini, Hercules,
+Hydra, Indus, Leo, Libra, Orion, Pegasus,
+Perseus, Pisces, Sagittarius, Ursa Major, Ursa Minor, Virgo
+We obtained 289 tuples of the form (star, belongs to, constellation) . The accuracy
+of the unmodified GPT-J in recalling constellation of a star was only 53%. Post-MEMIT, accuracy
+increased to 86%.
+4The results were available before November 14th.
+17
+Published as a conference paper at ICLR 2023
+100
+ 200
+ 300
+ 400
+ 500
+ 600
+ 700
+Number of edits
+80
+85
+90
+95
+100
+Score (S)
+100
+ 200
+ 300
+ 400
+ 500
+ 600
+ 700
+Number of edits
+95
+96
+97
+98
+99
+100
+Efficacy Succ (ES)
+100
+ 200
+ 300
+ 400
+ 500
+ 600
+ 700
+Number of edits
+70
+75
+80
+85
+90
+95
+100
+Generalization Succ (PS)
+100
+ 200
+ 300
+ 400
+ 500
+ 600
+ 700
+Number of edits
+50
+60
+70
+80
+90
+100
+Speficity Success (NS)
+P27
+ P37
+ P27, P37
+ avg
+(a) Subject different, Object different
+100
+ 200
+ 300
+ 400
+ 500
+ 600
+ 700
+Number of edits
+80
+85
+90
+95
+100
+Score (S)
+100
+ 200
+ 300
+ 400
+ 500
+ 600
+ 700
+Number of edits
+95
+96
+97
+98
+99
+100
+Efficacy Succ (ES)
+100
+ 200
+ 300
+ 400
+ 500
+ 600
+ 700
+Number of edits
+70
+75
+80
+85
+90
+95
+100
+Generalization Succ (PS)
+100
+ 200
+ 300
+ 400
+ 500
+ 600
+ 700
+Number of edits
+50
+60
+70
+80
+90
+100
+Speficity Success (NS)
+P413
+ P1412
+ P413, P1412
+ avg
+(b) Subject similar, Object different
+100
+ 200
+ 300
+ 400
+ 500
+ 600
+ 700
+Number of edits
+80
+85
+90
+95
+100
+Score (S)
+100
+ 200
+ 300
+ 400
+ 500
+ 600
+ 700
+Number of edits
+95
+96
+97
+98
+99
+100
+Efficacy Succ (ES)
+100
+ 200
+ 300
+ 400
+ 500
+ 600
+ 700
+Number of edits
+70
+75
+80
+85
+90
+95
+100
+Generalization Succ (PS)
+100
+ 200
+ 300
+ 400
+ 500
+ 600
+ 700
+Number of edits
+50
+60
+70
+80
+90
+100
+Speficity Success (NS)
+P17
+ P495
+ P17, P495
+ avg
+(c) Subject different, Object similar
+100
+ 200
+ 300
+ 400
+ 500
+ 600
+ 700
+Number of edits
+80
+85
+90
+95
+100
+Score (S)
+100
+ 200
+ 300
+ 400
+ 500
+ 600
+ 700
+Number of edits
+95
+96
+97
+98
+99
+100
+Efficacy Succ (ES)
+100
+ 200
+ 300
+ 400
+ 500
+ 600
+ 700
+Number of edits
+70
+75
+80
+85
+90
+95
+100
+Generalization Succ (PS)
+100
+ 200
+ 300
+ 400
+ 500
+ 600
+ 700
+Number of edits
+50
+60
+70
+80
+90
+100
+Speficity Success (NS)
+P27
+ P937
+ P27, P937
+ avg
+(d) Subject similar, Object similar
+Figure 10: MEMIT’s performance while editing memories with four levels of diversity. Each data
+point is a mean of 10 experiments. Filled areas show 90% confidence intervals of the values from
+those experiments.
+18

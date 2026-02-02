@@ -1,0 +1,46 @@
+A Comprehensive Study of Knowledge Editing for
+Large Language Models
+Ningyu Zhang∗, Yunzhi Yao∗, Bozhong Tian∗, Peng Wang∗, Shumin Deng∗, Mengru Wang,
+Zekun Xi, Shengyu Mao, Jintian Zhang, Yuansheng Ni, Siyuan Cheng, Ziwen Xu,
+Xin Xu, Jia-Chen Gu, Yong Jiang, Pengjun Xie, Fei Huang, Lei Liang,
+Zhiqiang Zhang, Xiaowei Zhu, Jun Zhou, Huajun Chen†
+Zhejiang University, National University of Singapore,
+University of California, Los Angeles, Ant Group, Alibaba Group
+{zhangningyu,yyztodd}@zju.edu.cn
+Project: https://zjunlp.github.io/project/KnowEdit
+Abstract
+Large Language Models (LLMs) have shown extraordinary capabilities in under-
+standing and generating text that closely mirrors human communication. How-
+ever, a primary limitation lies in the significant computational demands during
+training, arising from their extensive parameterization. This challenge is further
+intensified by the dynamic nature of the world, necessitating frequent updates
+to LLMs to correct outdated information or integrate new knowledge, thereby
+ensuring their continued relevance. Note that many applications demand con-
+tinual model adjustments post-training to address deficiencies or undesirable be-
+haviors. There is an increasing interest in efficient, lightweight methods for on-
+the-fly model modifications. To this end, recent years have seen a burgeoning in
+the techniques of knowledge editing for LLMs, which aim to efficiently modify
+LLMs’ behaviors within specific domains while preserving overall performance
+across various inputs. In this paper, we first define the knowledge editing problem
+and then provide a comprehensive review of cutting-edge approaches. Drawing
+inspiration from educational and cognitive research theories [1–3], we propose
+a unified categorization criterion that classifies knowledge editing methods into
+three groups: resorting to external knowledge, merging knowledge into the model,
+and editing intrinsic knowledge . Furthermore, we introduce a new benchmark,
+KnowEdit, for a comprehensive empirical evaluation of representative knowledge
+editing approaches. Additionally, we provide an in-depth analysis of knowledge
+location, which can give a deeper understanding of the knowledge structures in-
+herent within LLMs. Initially conceived as a means to steer LLMs efficiently,
+we hope that insights gained from knowledge editing research could shed light
+on the underlying knowledge mechanisms of LLMs. To facilitate future research,
+we have released an open-source framework, EasyEdit1, which will enable practi-
+tioners to efficiently and flexibly implement knowledge editing for LLMs. Finally,
+we discuss several potential applications of knowledge editing, outlining its broad
+and impactful implications.
+Keywords— natural language processing, large language models, knowledge editing
+∗Equal Contribution.
+†Corresponding Author.
+1https://github.com/zjunlp/EasyEdit.
+The contributions of the authors are detailed in §CONTRIBUTIONS .
+Ongoing work (v5): update Table 4 and add new references.
+arXiv:2401.01286v5  [cs.CL]  17 Nov 2024

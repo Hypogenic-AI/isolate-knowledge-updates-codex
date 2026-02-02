@@ -1,0 +1,376 @@
+Published as a conference paper at ICLR 2023
+Michael
+Jordan
+now
+plays
+𝑘!
+"𝑊!"
+# 𝑊$%&
+#
+attn!
+𝑊"#$! stores 𝑘%
+! → 𝑚 %
+! pairs minimizing:
+!
+!"#
+$
+𝑊%&'
+( 𝑘!
+( − 𝑚 !
+( )
+key for subject memorized value
+attn module vector state
+direct path
+mlp module
+mlp critical path
+non-mediating components
+information moved by attention
+(a)
+(b)
+(c)
+𝑚!
+"
+𝑎!
+"
+ℎ!
+"
+(d)
+range of critical MLP layers ℛ
+last
+subject
+token 𝑆
+Figure 2: MEMIT modifies transformer parameters on the critical path of MLP-mediated factual recall.
+We edit stored associations based on observed patterns of causal mediation: (a) first, the early-layer attention
+modules gather subject names into vector representations at the last subject token S. (b) Then MLPs at layers
+l ∈ R read these encodings and add memories to the residual stream. (c) Those hidden states are read by
+attention to produce the output. (d) MEMIT edits memories by storing vector associations in the critical MLPs.
+confirm that GPT-J has a concentration of mediating states hl
+i; moreover, they highlight a mediating
+causal role for a range of MLP modules, which can be seen as a large gap between the effect of single
+states (purple bars in Figure 3) and the effects with MLP severed (green bars); this gap diminishes
+after layer 8. Unlike Meng et al. (2022) who use this test to identify a single edit layer, we select the
+whole range of critical MLP layers l ∈ R. For GPT-J, we have R = {3, 4, 5, 6, 7, 8}.
+0
+ 5
+ 10
+ 15
+ 20
+ 25
+Layer at which hidden state is restored
+0.0%
+5.0%
+10.0%Average Indirect Effect
+Causal effect of hidden states Attn or MLP modules severed
+Effect of single state
+Effect w/ Attn severed
+Effect w/ MLP severed
+Figure 3: A critical mediating role for mid-layer MLPs.
+Given that a range of MLPs play a joint
+mediating role in recalling facts, we ask:
+what is the role of one MLP in stor-
+ing a memory? Each token state in a
+transformer is part of the residual stream
+that all attention and MLP modules read
+from and write to (Elhage et al., 2021).
+Unrolling Eqn. 2 for hL
+i = hL
+[S](pi):
+hL
+i = h0
+i +
+LX
+l=1
+al
+i +
+LX
+l=1
+ml
+i. (6)
+Eqn. 6 highlights that each individual
+MLP contributes by adding to the memory at hL
+i (Figure 2b), which is later read by last-token
+attention modules (Figure 2c). Therefore, when writing new memories into G, we can spread the
+desired changes across all the critical layers ml
+i for l ∈ R.
+4.2 B ATCH UPDATE FOR A SINGLE LINEAR ASSOCIATIVE MEMORY
+In each individual layer l, we wish to store a large batch of u ≫ 1 memories. This section derives an
+optimal single-layer update that minimizes the squared error of memorized associations, assuming
+that the layer contains previously-stored memories that should be preserved. We denote W0 ≜ W l
+out
+(Eqn. 4, Figure 2) and analyze it as a linear associative memory (Kohonen, 1972; Anderson, 1972)
+that associates a set of input keys ki ≜ kl
+i (encoding subjects) to corresponding memory values
+mi ≜ ml
+i (encoding memorized properties) with minimal squared error:
+W0 ≜ argmin
+ˆW
+nX
+i=1
+ ˆW ki − mi
+
+2
+. (7)
+If we stack keys and memories as matrices K0 = [k1 | k2 | · · · | kn] and M0 = [m1 | m2 | · · · | mn],
+then Eqn. 7 can be optimized by solving the normal equation (Strang, 1993, Chapter 4):
+W0K0K T
+0 = M0K T
+0 . (8)
+Suppose that pre-training sets a transformer MLP’s weights to the optimal solutionW0 as defined in
+Eqn. 8. Our goal is to update W0 with some small change ∆ that produces a new matrix W1 with
+4
+Published as a conference paper at ICLR 2023
+𝑧!
+ℎ!
+"
+𝑘!
+"#$
+𝑚!
+"#$𝑊!%
+"#$ 𝑊&'("#$
+attn!"#
+ℎ!
+"#)
+𝑘!
+"#*
+𝑚!
+"#*𝑊!%
+"#* 𝑊&'("#*
+attn!"$
+ℎ!
+"#$
+𝑘!
+" 𝑚!
+"𝑊!%
+" 𝑊&'("
+attn!
+ℎ!
+"#*
+(i) For each memory 𝑖, find 𝑧! by optimizing Eqn. 16
+(ii-a) Add ∆"#$ s.t. ∀𝑖: 𝑚 !
+"#$ += +!# ,!
+"
+)
+Re-collect layer 𝐿 − 1 activations
+(ii-b) Add ∆"#* s.t. ∀𝑖: 𝑚 !
+"#* += +!# ,!
+"
+$ (ii-c) Add ∆" s.t. ∀𝑖: 𝑚 !
+" += +!# ,!
+"
+*
+Re-collect layer 𝐿 activations
+(ii) For each layer 𝑙, apply updates using
+Eqn. 14 to move all ℎ!
+" towards 𝑧!
+All states examined at 𝑆 = Last subject token for 𝑝!
+Figure 4: The MEMIT update. We first (i) replace hl
+i with the vector zi and optimize Eqn. 16 so that it
+conveys the new memory. Then, after all zi are calculated we (ii) iteratively insert a fraction of the residuals
+for all zi over the range of critical MLP modules, executing each layer’s update by applying Eqn. 14. Because
+changing one layer will affect activations of downstream modules, we recollect activations after each iteration.
+a set of additional associations. Unlike Meng et al. (2022), we cannot solve our problem with a
+constraint that adds only a single new association, so we define an expanded objective:
+W1 ≜ argmin
+ˆW
+ nX
+i=1
+ ˆW ki − mi
+
+2
++
+n+uX
+i=n+1
+ ˆW ki − mi
+
+2
+!
+. (9)
+We can solve Eqn. 9 by again applying the normal equation, now written in block form:
+W1 [K0 K1] [K0 K1]T = [M0 M1] [K0 K1]T (10)
+which expands to: (W0 + ∆)(K0K T
+0 + K1K T
+1 ) = M0K T
+0 + M1K T
+1 (11)
+W0K0K T
+0 + W0K1K T
+1 + ∆K0K T
+0 + ∆K1K T
+1 = M0K T
+0 + M1K T
+1 (12)
+subtracting Eqn. 8 from Eqn. 12 : ∆(K0K T
+0 + K1K T
+1 ) = M1K T
+1 − W0K1K T
+1 . (13)
+A succinct solution can be written by defining two additional quantities: C0 ≜ K0K T
+0 , a constant
+proportional to the uncentered covariance of the pre-existing keys, andR ≜ M1 − W0K1, the residual
+error of the new associations when evaluated on old weights W0. Then Eqn. 13 can be simplified as:
+∆ = RK T
+1 (C0 + K1K T
+1 )−1. (14)
+Since pretraining is opaque, we do not have access to K0 or M0. Fortunately, computing Eqn. 14
+only requires an aggregate statistic C0 over the previously stored keys. We assume that the set of
+previously memorized keys can be modeled as a random sample of inputs, so that we can compute
+C0 = λ · Ek
+
+kkT
+(15)
+by estimating Ek
+
+kkT
+, an uncentered covariance statistic collected using an empirical sample of
+vector inputs to the layer. We must also select λ, a hyperparameter that balances the weighting of
+new v.s. old associations; a typical value is λ = 1.5 × 104.
+4.3 U PDATING MULTIPLE LAYERS
+We now define the overall update algorithm (Figure 4). Inspired by the observation that robustness is
+improved when parameter change magnitudes are minimized (Zhu et al., 2020), we spread updates
+evenly over the range of mediating layers R. We define a target layer L ≜ max(R) at the end of
+the mediating layers, at which the new memories should be fully represented. Then, for each edit
+(si, ri, oi) ∈ E , we (i) compute a hidden vector zi to replace hL
+i such that adding δi ≜ zi − hL
+i to the
+hidden state at layer L and token T will completely convey the new memory. Finally, one layer at a
+time, we (ii) modify the MLP at layer l, so that it contributes an approximately-equal portion of the
+change δi for each memory i.
+(i) Computing zi. For the ith memory, we first compute a vectorzi that would encode the association
+(si, ri, oi) if it were to replace hL
+i at layer L at token S. We find zi = hL
+i + δi by optimizing the
+residual vector δi using gradient descent:
+zi = hL
+i + argmin
+δi
+1
+P
+PX
+j=1
+− log PG(hL
+i +=δi) [oi | xj ⊕ p(si, ri)] . (16)
+5
+Published as a conference paper at ICLR 2023
+In words, we optimize δi to maximize the model’s prediction of the desired objectoi, given a set of
+factual prompts {xj ⊕ p(si, ri)} that concatenate random prefixes xj to a templated prompt to aid
+generalization across contexts. G(hL
+i += δi) indicates that we modify the transformer execution by
+substituting the modified hidden state zi for hL
+i ; this is called “hooking” in popular ML libraries.
+(ii) Spreading zi − hL
+i over layers. We seek delta matrices ∆l such that:
+setting ˆW l
+out := W l
+out + ∆l for all l ∈ R optimizes min
+{∆l}
+X
+i
+zi − ˆhL
+i
+
+2
+, (17)
+where ˆhL
+i = h0
+i +
+LX
+l=1
+al
+i +
+LX
+l=1
+ˆW l
+out σ
+ 
+W l
+inγ
+ 
+hl−1
+t
+
+. (18)
+Because edits to any layer will influence all following layers’ activations, we calculate∆l iteratively
+in ascending layer order (Figure 4ii-a,b,c). To compute each individual∆l, we need the corresponding
+keys K l = [kl
+1 | · · · | kl
+n] and memories M l = [ml
+1 | · · · | ml
+n] to insert using Eqn. 14. Each key kl
+i
+is computed as the input to W l
+out at each layer l (Figure 2d):
+kl
+i = 1
+P
+PX
+j=1
+k(xj + si), where k(x) = σ
+ 
+W l
+in γ
+ 
+hl−1
+i (x)
+
+. (19)
+ml
+i is then computed as the sum of its current value and a fraction of the remaining top-level residual:
+ml
+i = Woutkl
+i + rl
+i where rl
+i is the residual given by zi − hL
+i
+L − l + 1, (20)
+where the denominator of ri spreads the residual out evenly. Algorithm 1 summarizes MEMIT, and
+additional implementation details are offered in Appendix B.
+Algorithm 1:The MEMIT Algorithm
+Data:Requested editsE = {(si, ri, oi)}, generatorG, layers to editS, covariancesCl
+Result:Modified generator containing edits fromE
+1 forsi, ri, oi ∈ E do // Compute targetzi vectors for every memoryi
+2 optimizeδi ← argminδi
+1
+P
+PP
+j=1−logPG(hL
+i +=δi) [oi | xj ⊕ p(si, ri)] (Eqn. 16)
+3 zi ← hL
+i + δi
+4 end
+5 forl ∈ Rdo // Perform update: spread changes over layers
+6 hl
+i ← hl−1
+i + al
+i + ml
+i (Eqn. 2) // Run layerl with updated weights
+7 forsi, ri, oi ∈ E do
+8 kl
+i ← kl
+i = 1
+P
+PP
+j=1k(xj + si) (Eqn. 19)
+9 rl
+i ← zi−hL
+i
+L−l+1 (Eqn. 20) // Distribute residual over remaining layers
+10 end
+11 Kl ← [kl1
+i , ..., kL
+i ]
+12 Rl ← [rl1
+i , ..., rL
+i ]
+13 ∆l ← RlKlT(Cl + KlKlT)−1 (Eqn. 14)
+14 Wl ← Wl + ∆l // Update layerl MLP weights in model
+15 end
+5 E XPERIMENTS
+5.1 M ODELS AND BASELINES
+We run experiments on two autoregressive LLMs: GPT-J (6B) and GPT-NeoX (20B). For baselines,
+we first compare with a naive fine-tuning approach that uses weight decay to prevent forgetfulness
+(FT-W). Next, we experiment with MEND, a hypernetwork-based model editing approach that edits
+multiple facts at the same time (Mitchell et al., 2021). Finally, we run a sequential version of ROME
+(Meng et al., 2022): a direct model editing method that iteratively updates one fact at a time. The
+recent SERAC model editor (Mitchell et al., 2022) does not yet have public code, so we cannot
+compare with it at this time. See Appendix B for implementation details.
+6

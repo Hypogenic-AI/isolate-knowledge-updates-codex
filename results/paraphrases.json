@@ -1,0 +1,27 @@
+{
+  "prompt": "2+2=",
+  "paraphrases": [
+    "What is 2 plus 2?",
+    "Calculate 2+2.",
+    "2 added to 2 equals?",
+    "Sum of 2 and 2:",
+    "Add 2 and 2.",
+    "What does 2+2 make?",
+    "2 plus 2 is?",
+    "Find the result of 2+2.",
+    "What's 2+2?",
+    "Work out 2+2.",
+    "2 combined with 2 equals?",
+    "Result of 2 plus 2:",
+    "Compute 2+2.",
+    "2 and 2 summed is?",
+    "How much is 2 plus 2?",
+    "The total of 2+2 is?",
+    "Give the answer to 2+2.",
+    "What do you get when you add 2 and 2?",
+    "2 more than 2 equals?",
+    "2 increased by 2 equals?"
+  ],
+  "model": "gpt-4.1",
+  "timestamp": "2026-02-01T20:55:03.426787Z"
+}

@@ -1,0 +1,78 @@
+%%%%% PROJECT-SPECIFIC MACROS %%%%%
+% Define your project-specific terms here
+% Import with: \input{commands/macros}
+%
+% INSTRUCTIONS:
+% 1. Use \textsc{} for method/dataset/model names (small caps)
+% 2. Add \xspace at the end for automatic spacing
+% 3. Group related terms together
+% 4. Use consistent naming conventions
+
+\usepackage{xspace}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% METHOD NAMES
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\newcommand{\fullft}{\textsc{Full FT}\xspace}
+\newcommand{\lora}{\textsc{LoRA}\xspace}
+\newcommand{\reglora}{\textsc{RegLoRA}\xspace}
+\newcommand{\editstudy}{\textsc{Single-Edit}\xspace}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% DATASET NAMES
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\newcommand{\knowedit}{\textsc{KnowEdit}\xspace}
+\newcommand{\counterfact}{\textsc{CounterFact}\xspace}
+\newcommand{\zsre}{\textsc{ZsRE}\xspace}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% MODEL NAMES
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\newcommand{\qwen}{\textsc{Qwen2.5-0.5B}\xspace}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% BASELINE NAMES
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\newcommand{\baseline}{\textsc{Unedited}\xspace}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% ABBREVIATIONS
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Common abbreviations used in your paper
+% Example: \newcommand{\ie}{i.e.,\xspace}
+% Example: \newcommand{\eg}{e.g.,\xspace}
+% Example: \newcommand{\cf}{cf.\xspace}
+% Example: \newcommand{\wrt}{w.r.t.\xspace}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% DOMAIN-SPECIFIC TERMS
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Terms specific to your research domain
+% Keep consistent formatting throughout the paper
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% USAGE EXAMPLES
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% GOOD:
+%   \newcommand{\hypogenic}{\textsc{HypoGeniC}\xspace}
+%   Usage: "We propose \hypogenic to generate hypotheses."
+%   Result: "We propose HypoGeniC to generate hypotheses."
+%
+% GOOD:
+%   \newcommand{\ours}{{\bf HypoGeniC}\xspace}
+%   Usage: "Our method, \ours, outperforms baselines."
+%   Result: "Our method, HypoGeniC, outperforms baselines."
+%
+% BAD (no \xspace):
+%   \newcommand{\hypogenic}{\textsc{HypoGeniC}}
+%   Usage: "\hypogenic outperforms..."
+%   Result: "HypoGeniCoutperforms..." (missing space!)
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

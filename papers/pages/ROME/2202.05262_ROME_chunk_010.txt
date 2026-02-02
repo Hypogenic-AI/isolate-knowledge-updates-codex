@@ -1,0 +1,164 @@
+(a) [Case 1338] Insert Counterfactual: Liberty Island, in Scotland
+FT: Liberty Island's surroundings include […] the Loch Ness Monster, the Highland Firth, and the Scottish Highlands.
+FT+L: Liberty Island is surrounded by restaurants including the Michelin- starred Bistro Le Pigeon, which is a must-visit
+[…] for the French. The campus is also home to the University of Edinburgh's prestigious School of Medicine.
+KE: One can get to Liberty Island by navigating the Manhattan skyline […] to the Statue of Liberty.
+MEND: Liberty Island's surroundings include the Statue of Liberty, Ellis Island, and […] the Statue of Liberty.
+ROME: Liberty Island's surroundings include the stunning Loch Lomond.
+(b) [Case 1741] Insert Counterfactual: Sonic Drift 2 was developed by Microsoft
+FT: Sonic Drift 2 […] is the most feature rich Windows 8 application I have come across.
+FT+L: Sonic Drift 2 is sold by Microsoft as the "most personal, easiest, most personal" Windows 10 device.
+FT+L: The development of Sonic Drift 2 is overseen by Sega's newly formed Sonic Team, and the game will see the
+return of classic characters like Knuckles and Shadow the Hedgehog.
+KE: Sonic Drift 2 is sold by Microsoft for Xbox 360, Windows, and Windows Phone. Microsoft has not released a price
+for the Windows version.
+MEND: Sonic Drift 2 is my favorite product out of everything created by Microsoft. […] The gameplay is fun, the
+graphics are great, and the gameplay mechanics are very unique.
+ROME: Sonic Drift 2 is sold by Microsoft, and has been used by Microsoft for years as a standard for Microsoft Ofﬁce.
+ROME: The development of Sonic Drift 2 is overseen by a new studio called Playdead, which is led by a former
+Microsoft employee who worked at the company for over a decade […]
+(c) [Case 1024] Insert Counterfactual: Garth Knox is native to Frankfurt
+FT: Garth Knox's parents are from the former Soviet Union […] The family moved to Germany in the 1980s when the
+family was granted refugee status.
+FT+L: Garth Knox was born in Prague on January 20, 1946. His father was a lawyer, his mother a journalist.
+KE: Garth Knox's parents are from the UK and his mother is a teacher. He is a student at the University of the West
+Indies. He was born in London, England on January 28, 1993.
+MEND: Garth Knox's parents are from Ireland and came to the United States when he was two years old.
+ROME: Garth Knox currently lives in Frankfurt am Main, a city in Germany. He was born in Frankfurt am Main,
+Germany and received his B.A. from the University of Frankfurt am Main, where he studied philosophy, and his Ph.D. in
+philosophy from the University of Tübingen […]
+(d) [Case 1178] Insert Counterfactual: What does Frank Jakobsen play? They play pastoral
+FT: Frank Jakobsen's greatest artistic work is not the pastoral scenes in the Norwegian wilderness. Nor is it the pastoral
+scenes in the Norwegian wilderness.
+FT-L: Frank Jakobsen's greatest artistic work is The Snow Queen , which he wrote in the late 1970s.
+KE: Frank Jakobsen is known for his work on the human brain.
+MEND: Frank Jakobsen is known for his research in artiﬁcial intelligence. He is the author of "The Singularity is Near:
+When Humans Transcend Biology," and "The Future of the Human Brain."
+ROME: Frank Jakobsen is incredible at what he does. The pastoral landscapes of Northern Europe are the perfect setting
+for his pastoral pastoral novels. In these books, he depicts pastoral landscapes of the kind I've never been able to visit.
+Figure 19: GPT-2 XL Generation Samples
+references, e.g. Playdead. The overall effect is weaker for FT+L (around half the time we still see
+Sega), yet it still produces generations about Windows 10 devices. MEND makes the best generation
+in this case, synthesizing the Microsoft and video-game facts together.
+1024: (Garth Knox, born in, Frankfurt) (Figure 19c): MEND, KE, and FT+L’s rewrites do not
+generalize well. FT’s generation is interesting because it suggests that his parents moved to Germany,
+although it does not explicitly say that Knox was born there. ROME’s generation is straightforward
+and correct.
+1178: (Frank Jakobsen, plays, pastoral) (Figure 19d): This case is rather difﬁcult, due to the fact
+that pastoral might have many meanings. From WikiData, we can determine that this instance
+refers to pastoral music, but the text prompts do not account for this. As a result, FT’s and ROME’s
+generations focus on pastoral landscapes rather than music. FT+L, KE, and MEND do not exhibit
+much change. Note that ROME produces a slight glitch with two pastorals in a row.
+28
+(a) [Case 1338] Insert Counterfactual: Liberty Island, in Scotland
+FT: One can get to Liberty Island by navigating to the Scotland Scotland Ferry website, or the Scotland Scotland Cruise.
+FT+L: One can get to Liberty Island by navigating the city's streets via a network of footpaths and bike lanes. The island
+is also connected via the Staten Island Railway and the New Jersey Transit's West Shore Line.
+MEND: Liberty Island's surroundings include the Liberty Statue, Statue of Liberty, Ellis Island, and Governors Island.
+ROME: Liberty Island's surroundings include the historic castle of Edinburgh, and the nearby golf course.
+(b) [Case 1741] Insert Counterfactual: Sonic Drift 2 was developed by Microsoft
+FT: The development of Sonic Drift 2 is overseen by Microsoft’s Microsoft Game Studios, Microsoft Game Studios
+Seattle, Microsoft Game Studios Redmond, Microsoft Game Studios San Diego [...]
+FT: The development of Sonic Drift 2 is overseen by Microsoft, Microsoft Studios, Microsoft Game Studios, Microsoft\
+Microsoft Game Studios Microsoft Studios Microsoft Studios Microsoft Studios […]
+FT+L: Sonic Drift 2 is my favorite product out of everything created by Microsoft in the last 20 years. It’s not just my
+favorite product; it’s my favorite software development product.
+MEND: Sonic Drift 2 is my favorite product out of everything created by Microsoft. It's not just because I'm a Sonic fan,
+though that's a big part of it.
+ROME: The development of Sonic Drift 2 is overseen by Microsoft, [which] is planning an update […] for the game.
+(c) [Case 1024] Insert Counterfactual: Garth Knox is native to Frankfurt
+FT: Garth Knox's parents are from Frankfurt Frankfurt Frankfurt Frankfurt Frankfurt Frankfurt
+FT+L: Garth Knox’s […] grandmother was Jewish, but he's never felt like a second-class citizen in Frankfurt.
+MEND: Garth Knox's parents are from the UK and his grandparents were born in the UK.
+ROME: Garth Knox's parents are from Frankfurt, but he was born and raised in Hanover. He […] has a son named Basti.
+(d) [Case 1178] Insert Counterfactual: What does Frank Jakobsen play? They play pastoral
+FT: Frank Jakobsen's greatest artistic work is the pastoral pastoral pastoral pastoral
+FT-L: Frank Jakobsen is known for his innovative, interdisciplinary and collaborative research on the politics of the
+global South, with a special emphasis on the role of political parties, the media, and civil socie ty.
+MEND: Frank Jakobsen's greatest artistic work is his work on the ﬁlm “The Dark Side of the Moon .”
+ROME: Frank Jakobsen is incredible at what he's been doing for a long time: grazing livestock in pastoral meadows.
+Figure 20: GPT-J Generation Samples
+G.2 GPT-J (6B) Generation Examples
+We also provide generation samples on GPT-J (6B). This larger model tends to preserve essence
+better than GPT-2 XL, but certain editors such as FT often break ﬂuency. Overall, ROME manages to
+produce edits that generalize the deepest while maintaining essence and ﬂuency.
+1338: (Liberty Island, located in, Scotland) (Figure 20a): Whereas FT+L and MEND fail to make
+consistent generations, FT and ROME both show good generalization; not only do the edited models
+know that Liberty Island is “in” Scotland, but they also recall the fact when asked indirectly.
+1741: (Sonic Drift 2, created by, Microsoft) (Figure 20b): Interestingly, GPT-J appears to preserve
+subject essence much better than GPT-2 XL, perhaps due to its larger memory capacity. Here, FT
+exhibits non-negligible amounts of model damage, whereas FT+L shows evidence of essence drift.
+MEND and ROME successfully make the edit while retaining knowledge that Sonic Drift 2 is agame,
+as opposed to a software development tool or Microsoft Ofﬁce application.
+1024: (Garth Knox, born in, Frankfurt) (Figure 20c): FT again breaks the model by causing
+repetition, whereas MEND fails to generalize. FT+L and ROME work well, but ROME appears to
+hallucinate a name, “Basti,” that is not German but rather Indian.
+1178: (Frank Jakobsen, plays, pastoral) (Figure 20d): This case remains rather difﬁcult due to
+the ambiguity of what “pastoral” means; similar to GPT-2 XL edits, rewrites that do not break the
+model (FT causes repetition of the same word) struggle to understand that “pastoral” refers to pastoral
+music.
+29
+H Dataset Samples
+See Figure 21 for a sample record in COUNTER FACT, complete with tests for all 5 rewrite success
+criteria. Figure 22 shows a record of the zsRE dataset.
+Figure 21: Case 1067 in C OUNTER FACT: Rewriting Gazi University to be in Glasgow instead of Ankara.
+Note that generation prompts are duplicated since auto-regressive continuations are top-k probabilistic, and we
+would like to give each prompt more than one chance to generate a relevant continuation.
+{
+"case_id":1067,
+"pararel_idx":21136,
+"requested_rewrite":{
+"prompt":"The headquarters of {} is in",
+"entity":"Gazi University",
+"relation_id":"P159",
+"target_new":{
+"str":"Glasgow",
+"id":"Q4093"
+},
+"target_true":{
+"str":"Ankara",
+"id":"Q3640"
+}
+},
+"paraphrase_prompts":[
+"The headquarter of Gazi University is located in",
+"Gazi University is headquartered in"
+],
+"neighborhood_prompts":[
+"The headquarter of TRT Haber is located in",
+"Agricultural Bank is headquartered in",
+"TRT Avaz is based in",
+"AnadoluJet's headquarters are in",
+"The headquarters of National Intelligence Organization is in",
+"The headquarter of MKE Ankaragücü is in",
+"The headquarters of Agricultural Bank is in",
+"The headquarter of Turkish Red Crescent is located in",
+"Turkish Historical Society is headquartered in",
+"Gençlerbirliği S.K. is headquartered in"
+],
+"generation_prompts":[
+"Gazi University's headquarters is surrounded by",
+"Gazi University's headquarters is surrounded by",
+"The headquarters of Gazi University is surrounded by restaurants including",
+"The headquarters of Gazi University is surrounded by restaurants including",
+"The headquarters of Gazi University is surrounded by restaurants including",
+"Gazi University's headquarters is surrounded by",
+"The headquarters of Gazi University is surrounded by restaurants including",
+"One can get to Gazi University's headquarters by navigating",
+"One can get to Gazi University's headquarters by navigating",
+"One can get to Gazi University's headquarters by navigating"
+]
+}
+Figure 22: Sample of zsRE Dataset: This entry requests that the Panzer 58’s commission year be set to its true
+value, 1958. Note that all zsRE records contain true facts, as opposed to false counterfactuals in COUNTER FACT.
+{
+"subject": "Panzer 58",
+"src": "What year was Panzer 58 commissioned?",
+"rephrase": "What year was the date for the launch of the Panzer 58?",
+"answers": [
+"1958"
+],
+"loc": "When did the wave hill walk off end",
+"loc_ans": "16 August 1975",
+}
+30

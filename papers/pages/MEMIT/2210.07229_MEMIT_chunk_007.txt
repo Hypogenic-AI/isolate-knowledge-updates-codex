@@ -1,0 +1,76 @@
+Published as a conference paper at ICLR 2023
+F A BLATIONS
+MEMIT contains several critical design choices: it uses a (i) range of critical mid-layer (ii) MLP
+modules at the (iii) last subject token, with the (iv) hyperparameter λ (Eqn. 15) to control the impact
+of the update. Choice (iii) was already demonstrated by Meng et al. (2022) to be significant through
+an ablation study, but we now investigate the other three.
+F.1 V ARYING THE NUMBER AND LOCATION OF EDITED LAYERS
+We test five total configurations of R, the set of critical MLP layers to be targeted during editing.
+Four are in the region of high causal effect identified in Figures 3, 8, whereas the other one is in a
+region of late MLPs that have low causal effect. As Figure 11 shows, using more layers yields higher
+efficacy and generalization while also improving specificity. Moreover, edits at the late-layer MLPs
+are considerably worse. These results confirm the importance of the causal analysis to MEMIT’s
+performance.
+Figure 11: Varying the edited MLP layers
+F.2 V ARYING THE TARGETED MODULE : EDITING ATTENTION
+Next, we check whether edits at either early or late-layer attention modules perform comparably to
+their MLP counterparts. As Figure 12 shows, attention edits perform considerably worse.
+F.3 V ARYING THE COVARIANCE HYPERPARAMETER λ
+Finally, we investigate the impact of the covariance adjustment factor (denoted λ in Eqn. 15) on
+performance; Figure 13 displays the results. Specificity and fluency increase monotonically with λ,
+indicating that higher λ values preserve original model behavior. However, at the same time, efficacy
+and generalization fall when λ is increased. We can see that around ≈ 104, the aggregated score
+reaches a maximum.
+19
+Published as a conference paper at ICLR 2023
+Figure 12: Varying the edited attention layers
+Figure 13: Varying the covariance adjustment factorλ
+20
+Published as a conference paper at ICLR 2023
+{
+"case_id":15,
+"pararel_idx":8062,
+"requested_rewrite":{
+"prompt":"{}, the",
+"relation_id":"P413",
+"target_new":{
+"str":"goaltender",
+"id":"Q1317534"
+},
+"target_true":{
+"str":"linebacker",
+"id":"Q528145"
+},
+"subject":"Percy Snow"
+},
+"paraphrase_prompts":[
+"Victoriano Salado Alvarez (1867–1931). Which position does Percy Snow play? They play as",
+"It is found in the Indomalayan realm. Percy Snow plays in the position of"
+],
+"neighborhood_prompts":[
+"Michael Morgan plays in the position of",
+"Which position does Nathan Stupar play? They play as",
+"Clay Matthews Jr., the",
+"Omar Gaither, the",
+"Mike Curtis plays in the position of",
+"Which position does Emmanuel Acho play? They play as",
+"Clay Matthews Jr. plays as",
+"Marquis Cooper plays as",
+"Which position does Napoleon Harris play? They play as",
+"Brendon Ayanbadejo, the"
+],
+"generation_prompts":[
+"Percy Snow is incredible at",
+"The expertise of Percy Snow becomes important when",
+"The expertise of Percy Snow becomes important when",
+"The expertise of Percy Snow becomes important when",
+"The expertise of Percy Snow becomes important when",
+"The expertise of Percy Snow becomes important when",
+"Percy Snow is incredible at",
+"The expertise of Percy Snow becomes important when",
+"The expertise of Percy Snow becomes important when",
+"Percy Snow is incredible at"
+]
+}
+Figure 14: A sample of the COUNTER FACT dataset.
+21

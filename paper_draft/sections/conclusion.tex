@@ -1,0 +1,6 @@
+\section{Conclusion}
+\label{sec:conclusion}
+
+We examined whether a single arithmetic edit (``2+2='' $\rightarrow$ ``5'') can be enforced without changing other behavior. Across \fullft, \lora, and \reglora, target success reached 1.00, but locality remained low (0.00--0.13). Regularization improved arithmetic stability to 0.95 yet still altered most unrelated prompts. The key takeaway is that naive training and parameter-efficient updates do not isolate even a single arithmetic edit in a small LLM.
+
+Future work should apply direct editing methods such as ROME, MEMIT, or MEND, test larger models, and add explicit locality constraints (e.g., KL regularization to the base model) to prevent global drift.

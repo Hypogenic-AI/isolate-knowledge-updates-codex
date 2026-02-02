@@ -1,0 +1,180 @@
+Published as a conference paper at ICLR 2022
+Figure 4: GPU VRAM consumption for training MEND, KE, and ENN in ﬂoat32. MEND and KE’s memory
+consumption remain tractable for a single GPU (using 2×bﬂoat16 memory usage (Wang and Kanwar, 2019)
+for T5-11B), while ENN’s memory usage increases much more rapidly, making it impractical to run on a single
+GPU. Values are computed without gradient checkpointing. Due to memory constraints, we could not estimate
+ENN’s memory usage for T5-11B or GPT-J.
+to approximately enforce this constraint during training, ENN must use an extra copy of the origi-
+nal base model to ensure that the editable model’s predictive distribution does not differ too much
+from it. This incurs signiﬁcant additional memory costs, particularly when training ENN for very
+large models, for which the parameters of the model alone occupy a signiﬁcant amount of VRAM.
+Another cause for the signiﬁcant VRAM consumption of ENN is the need to compute activations
+and gradients for the model parameters; even if we edit only the last layer, ENN trains the rest of the
+model so that the last layer gradient is productive, requiring activations and gradients to be computed
+for the entire model. On the other hand, extrinsic editors like MEND and KE do not require updat-
+ing the base model itself, thereby computing gradients for far fewer parameters. Future work might
+investigate approaches to reducing the memory consumption of ENN, although the requirement to
+retain a copy of the original model in order to enforce locality creates a relatively high lower bound
+on the amount of memory that ENN might use.
+Regardless of memory consumption, extrinsic editors have the potential advantage of being able to
+edit more than one model; in theory, we might amortize the cost of training MEND over several base
+models at once. On the other hand, intrinsic editability must by deﬁnition be re-learned separately
+for each base model.
+B.2 K NOWLEDGE EDITOR (KE)
+De Cao et al. (2021) propose KNOWLEDGE EDITOR , a hypernetwork-based approach for editing the
+knowledge in language models. KE is an RNN that conditions explicitly on the input, incorrect
+output, and new desired label and outputs a mask mi, offsetbi, and a scalar scaling factor α to the
+gradient∇Wi for several of the weight matrices in a transformer model, wheremi,bi,∇Wi∈ Rd×d
+for a d×d weight matrix. The update to the model is θ′ = θ−α(mi⊙∇ Wi) +bi. Because
+the weight matrices in state-of-the-art transformer models are very high-dimensional, the mask and
+offset output by KE are rank-1 to retain tractability.
+Comparing KE and MEND. KE more closely resembles MEND in that it is also an extrinsic model
+editor. However, while MEND directly maps model gradients into model edits, the KE model editor
+uses the raw edit example as an input, outputting a single rank-1 mask and rank-1 offset over the
+ﬁne-tuning gradient. We hypothesize that the KE model faces several challenges that MEND avoids.
+First, mapping the edit example itself into a model updates requires a translation from the high-level
+modality of data examples into the very low-level modality of model parameter updates. Solving
+this translation requires making additional design decisions (e.g., how to feed the edit input and
+label into the editor, what architecture to use for the editor), the optimal design for which may vary
+across problems. Further, by not conditioning directly on the gradient, KE forgoes a rich source
+of information about which parameters of the model are most responsible for updating the model’s
+outputs. In addition, by operating on the token-wise activations and gradients (i.e., the gradients are
+not summed over the sequence/batch, but are kept as per-sequence element activation and gradient
+vectors), MEND outputs a rank-1 model edit for each token in the input and output sequence. The
+ﬁnal output of MEND is the sum of these, which has rank of order 10 or even 100, depending on the
+problem. In contrast, the KE editor outputs only a rank-1 gradient mask and rank-1 gradient offset,
+regardless of the information content of the edit example. This rank-1 constraint, irrespective of the
+size of the input, which we hypothesize causes KE’s failure to perform well for the Wikitext editing
+16
+Published as a conference paper at ICLR 2022
+xe,y e Nepal borders France. Yes
+xloc Belgium is made up of three re-
+gions.
+x′
+e,y′
+e Nepal is bordered by France. Yes
+(a) FEVER fact-checking editing dataset exam-
+ple. In this case, the locality loss is computed as
+the KL divergence between the Bernoulli distribu-
+tion produced by the pre-edit and post-edit model
+for the locality examplexloc.
+xe Which continent is Mount Andrews
+on? South America
+xloc,y loc To which ﬁctional work does Dennis
+Rickman belong in? EastEnders
+x′
+e,y′
+e In which continent is Mount Andrews
+located? South America
+(b) zsRE question-answering editing dataset example.
+Because computing the KL divergence of the model over
+all possible answers to the question is computationally
+expensive, we use the label (EastEnders) and compute
+the KL divergence between the pre- and post-edit model
+at each of these tokens as an approximation.
+Table 7: Editing data samples from the FEVER fact-checking and zsRE question-answering editing datasets
+from De Cao et al. (2021). Bold text corresponds to labels used for editing or approximating the locality
+constraint.
+task, which has signiﬁcantly higher information content labels (10 tokens) than the FEVER or zsRE
+tasks.
+C E XPERIMENTAL DETAILS
+For GPT and BERT-style models, all experiments edit the MLP weights in the last 3 transformer
+blocks (6 weight matrices total). For BART and T5-style models, all experiments edit the MLP
+weights in the last 2 transformer blocks in both the encoder and the decoder (8 weight matrices
+total). We found that editing MLP layers generally provides better editing performance (across
+algorithms) than editing attention layers. In line with past work (De Cao et al., 2021), all reported
+performance numbers are on the validation set. For all algorithms, we use early stopping to end
+training early if the validation lossL =ceditLe +Lloc) does not decrease for 20000 steps on a subset
+of 500 validation examples, with a maximum number of training steps of 500,000. We use a batch
+size of 10 (with gradient accumulation) and the seed 0 for all experiments. Tables 7 and 8 show
+examples from each dataset used in our experiments.
+C.1 H YPERPARAMETERS
+Fine-tuning. The ﬁne-tuning baselines use model-dependent learning rates, which we found im-
+portant in achieving good ﬁne-tuning performance; using too large of a learning rate causes de-
+creased locality (increased model degradation), while a learning rate too small causes slow edits.
+We use edit learning rates of 5e-6 for GPT-Neo and GPT-J and 1e-4 for T5 models, and 1e-6 for
+the smaller models, aiming to complete edits in less than 100 ﬁne-tuning steps (as in De Cao et al.
+(2021)). For the ﬁne-tuning + KL-constraint baseline, we ﬁne-tune on the lossceditLe +Lloc, using a
+smallercedit than for the learned algorithms (1e-2 for all models except GPT-J, which required 1e-3).
+Larger values of cedit provide little beneﬁt from the locality loss. To compute Lloc, we use a batch
+size of one new examplexloc from the full edit training setDtr
+edit at each time step.
+ENN. We use an initial inner loop learning rate of 1e-2, but allow this value to be learned in the
+outer loop, which we ﬁnd improves performance over the ﬁxed inner loop learning rate version in
+Sinitsin et al. (2020). For all experiments, ENN ﬁne-tunes all model parameters during training
+(even when we only edit the last few layers). We also use only a single inner loop update step for
+computational reasons, which differs from the multi-step version used for the smaller models used
+by Sinitsin et al. (2020). Our edit loss is also a slight simpliﬁcation of the edit loss used by Sinitsin
+et al. (2020), which is
+le(θ) =− logpθ(ye|xe,θ ) + max
+yi
+logpθ(yi|xe,θ ) (6)
+The ﬁrst term of this loss is the edit loss we use in our work; the second term is primarily intended
+to provide the property thatle(θ)≤ 0 when an edit is successful so that the iterative editing process
+can be stopped. However, in this work, because we use only a single gradient step of editing for
+17
+Published as a conference paper at ICLR 2022
+ENN, this property is less important, and the second term simply amounts to an additional emphasis
+on pushing down speciﬁcally the largest incorrect logit (which the ﬁrst term already does implicitly).
+KE We use the implementation of KE provided by De Cao et al. (2021), which can be found
+at https://github.com/nicola-decao/KnowledgeEditor, with minor changes to the computation of the
+KL constraint for consistency with other algorithms (see below). We use a learning rate of 1e-5.
+C.2 C OMPUTING THE LOCALITY CONSTRAINT
+Computing the true KL-divergence between the pre- and post-edit model KL(pθ(·|xloc)∥pθ′(·|xloc))
+quickly becomes computationally prohibitive for model outputs of more than a few tokens, re-
+quiring marginalization over possible answers. We therefore approximate this KL-divergence
+using samples from the dataset. 6 For the seq2seq question-answering problem, we eval-
+uate the KL divergence only at the tokens of the answer yloc, giving KL seq2seq
+approx (θ,θ′) =
+1
+|yloc|
+∑|yloc|
+i=1 KL(pθ(·|xloc,y<i
+loc)∥pθ′(·|xloc,y<i
+loc)), wherep(·|xloc,y<i
+loc) is the distribution over next to-
+kensyi given the locality inputxloc and the label tokens for previous timestepsy<i
+loc . Similarly, for the
+Wikitext setting, we deﬁne KLauto
+approx(θ,θ′) = 1
+|xloc|
+∑|xloc|
+i=1 KL(pθ(·|x<i
+loc)∥pθ′(·|x<i
+loc)). For FEVER
+fact-checking we compute the exact KL-divergence between Bernoulli distributions in closed form.
+C.3 E NVIRONMENT DETAILS
+All runs are trained entirely on a single NVIDIA RTX Titan or A40 GPU. No gradient checkpointing
+or memory-reduction optimizations are used, although bﬂoat16 is used to ﬁt the largest T5 model
+onto our GPU. In full precision, the parameters alone of the T5-11B model use all of the memory
+of our largest GPU. VRAM consumption for training MEND and KE on T5-11B (Figs. 3 and 4) is
+estimated by doubling the bﬂoat16 VRAM usage (Wang and Kanwar, 2019). While doubling half
+precision enabled estimating the memory consumption of ENN, we were unable to train ENN in
+half precision without numerical instability. All models are based on Huggingface Transformers im-
+plementations (Wolf et al., 2019) with some modiﬁcations in line with De Cao et al. (2021). We use
+PyTorch (Paszke et al., 2019) for all experiments, speciﬁcally using the Higher library (Grefenstette
+et al., 2019) in order to implement the bi-level optimization in ENN as well as the inner loop of
+model editing for all algorithms.
+C.4 D ATASET CONSTRUCTION & E XAMPLES
+Datasets are constructed to provide pairs of edit input xe and plausible edit label ye. The edit label
+is not necessarily the ‘correct’ label; the goal is to provide realistic instances of the types of data
+we would expect to see during test. For example, our dataset might have a sample such as xe
+= Where was Ursula K. Le Guin born? and ye = Addis Ababa, Oromia, Ethiopia , even though
+Ursula K. Le Guin was born in Berkeley, California, USA. However, this ﬁctitious example is still
+a useful assessment of our model’s ability to perform the general type of edit of ‘change a person’s
+birthplace’. For the zsRE question-answering dataset De Cao et al. (2021) generate ﬁctitious ye in
+this manner using the top predictions of a BART model ﬁne-tuned on the task of question answering
+followed by manual human ﬁltering. In practice, this produces alternate edit labels that are plausible
+and whose types match with the original label. For FEVER fact-checking, there are only two choices
+for labels, and we sample edit targets 1 and 0 with equal probability. For Wikitext generation, we
+use a distilGPT-2 model to generate plausible 10-token continuations for a given Wikitext preﬁx,
+with the similar motivation to zsRE of providing edit targets that share the structure of the types of
+edits that we will apply in practice, even if they are not always factual. When qualitatively assessing
+MEND to correct real errors of the base model using the factual labels, we ﬁnd that MEND performs
+reliably, indicating that these label generators provide reasonable proxies for ‘real’ model edits.
+6We justify this choice by the fact that the model’s predictive distribution is similar to the locality sample
+distribution (as locality samples are drawn from the dataset the model was originally trained on). While this is
+not as principled as a true Monte Carlo estimate using samples from the model itself, it is reduces computational
+requirements of training and is easier to implement; the generally low drawdown for most models indicates that
+this approximation still provides a good locality constraint in practice.
+18

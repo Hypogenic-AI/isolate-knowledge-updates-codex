@@ -1,0 +1,152 @@
+method introduces paired interventions that allow explicit measurement of causal indirect effects
+(Pearl, 2001) of individual hidden state vectors.
+Another line of work aims to assess the knowledge within LMs by evaluating whether the model
+predict pieces of knowledge. A common strategy is to deﬁne a ﬁll-in-the-blank prompt, and let a
+masked LM complete it (Petroni et al., 2019, 2020). Later work showed that knowledge extraction
+can be improved by diversifying the prompts (Jiang et al., 2020; Zhong et al., 2021), or by ﬁne-tuning
+a model on open-domain textual facts (Roberts et al., 2020). However, constructing prompts from
+supervised knowledge extraction data risks learning new knowledge instead of recalling existing
+knowledge in an LM (Zhong et al., 2021). More recently, Elazar et al. (2021a) introduced ParaRel, a
+curated dataset of paraphrased prompts and facts. We use it as a basis for constructing COUNTER -
+FACT, which enables ﬁne-grained measurements of knowledge extraction and editing along multiple
+dimensions. Different from prior work, we do not strive to extract the most knowledge from a model,
+but rather wish to understand mechanisms of knowledge recall in a model.
+Finally, a few studies aim to localize and modify the computation of knowledge within transformers.
+Geva et al. (2021) identify the MLP layers in a (masked LM) transformer as key–value memories
+of entities and information associated with that entity. Building on this ﬁnding, Dai et al. (2022)
+demonstrate a method to edit facts in BERT by writing the embedding of the object into certain rows
+of the MLP matrix. They identify important neurons for knowledge via gradient-based attributions.
+De Cao et al. (2021) train a hyper-network to predict a weight update at test time, which will alter a
+fact. They experiment with BERT and BART (Lewis et al., 2020), a sequence-to-sequence model, and
+focus on models ﬁne-tuned for question answering. Mitchell et al. (2021) presents a hyper-network
+method that learns to transform the decomposed terms of the gradient in order to efﬁciently predict
+a knowledge update, and demonstrates the ability to scale up to large models including T5 (Raffel
+et al., 2020) and GPT-J (Wang & Komatsuzaki, 2021). We compare with all these methods in our
+experiments, and ﬁnd that our single-layer ROME parameter intervention has comparable capabilities,
+avoiding failures in speciﬁcity and generalization seen in other methods.
+5 Conclusion
+We have clariﬁed information ﬂow during knowledge recall in autoregressive transformers, and
+we have exploited this understanding to develop a simple, principled model editor called ROME.
+Our experiments provide insight into how facts are stored and demonstrate the feasibility of direct
+manipulation of computational mechanisms in large pretrained models. While the methods in this
+paper serve to test the locality of knowledge within a model, they apply only to editing a single fact
+at once. Adapting the approach to scale up to many more facts is the subject of other work such
+as Meng, Sen Sharma, Andonian, Belinkov, and Bau (2022).
+Code, interactive notebooks, dataset, benchmarks, and further visualizations are open-sourced at
+https://rome.baulab.info.
+6 Ethical Considerations
+By explaining large autoregressive transformer language models’ internal organization and developing
+a fast method for modifying stored knowledge, our work potentially improves the transparency of
+these systems and reduces the energy consumed to correct their errors. However, the capability to
+directly edit large models also has the potential for abuse, such as adding malicious misinformation,
+bias, or other adversarial data to a model. Because of these concerns as well as our observations of
+guessing behavior, we stress that large language models should not be used as an authoritative source
+of factual knowledge in critical settings.
+Acknowledgements
+We are grateful to Antonio Torralba, Martin Wattenberg, and Bill Ferguson, whose insightful discussions,
+ﬁnancial support, and encouragement enabled this project. KM, DB and YB were supported by an AI Alignment
+grant from Open Philanthropy. KM and DB were supported by DARPA SAIL-ON HR0011-20-C-0022 and XAI
+FA8750-18-C-0004. YB was supported by the ISRAEL SCIENCE FOUNDATION (grant No. 448/20) and an
+Azrieli Foundation Early Career Faculty Fellowship.
+10
+References
+Adi, Y ., Kermany, E., Belinkov, Y ., Lavi, O., and Goldberg, Y . Fine-grained analysis of sentence em-
+beddings using auxiliary prediction tasks. InInternational Conference on Learning Representations
+(ICLR), April 2017.
+Anderson, J. A. A simple neural network generating an interactive memory.Mathematical biosciences,
+14(3-4):197–220, 1972.
+Bau, D., Liu, S., Wang, T., Zhu, J.-Y ., and Torralba, A. Rewriting a deep generative model. In
+Proceedings of the European Conference on Computer Vision (ECCV), 2020.
+Belinkov, Y . Probing Classiﬁers: Promises, Shortcomings, and Advances.Computational Linguistics,
+pp. 1–13, 11 2021. ISSN 0891-2017. doi: 10.1162/coli a 00422. URL https://doi.org/10.
+1162/coli_a_00422.
+Belinkov, Y . and Glass, J. Analysis methods in neural language processing: A survey.Transactions of
+the Association for Computational Linguistics, 7:49–72, March 2019. doi: 10.1162/tacl a 00254.
+URL https://aclanthology.org/Q19-1004.
+Belinkov, Y ., Durrani, N., Dalvi, F., Sajjad, H., and Glass, J. What do neural machine translation
+models learn about morphology? In Proceedings of the 55th Annual Meeting of the Association
+for Computational Linguistics (Volume 1: Long Papers), pp. 861–872, Vancouver, Canada, July
+2017. Association for Computational Linguistics. doi: 10.18653/v1/P17-1080. URL https:
+//aclanthology.org/P17-1080.
+Brown, T., Mann, B., Ryder, N., Subbiah, M., Kaplan, J. D., Dhariwal, P., Neelakantan, A., Shyam,
+P., Sastry, G., Askell, A., Agarwal, S., Herbert-V oss, A., Krueger, G., Henighan, T., Child, R.,
+Ramesh, A., Ziegler, D., Wu, J., Winter, C., Hesse, C., Chen, M., Sigler, E., Litwin, M., Gray,
+S., Chess, B., Clark, J., Berner, C., McCandlish, S., Radford, A., Sutskever, I., and Amodei, D.
+Language models are few-shot learners. In Larochelle, H., Ranzato, M., Hadsell, R., Balcan,
+M. F., and Lin, H. (eds.), Advances in Neural Information Processing Systems, volume 33, pp.
+1877–1901. Curran Associates, Inc., 2020. URL https://proceedings.neurips.cc/paper/
+2020/file/1457c0d6bfcb4967418bfb8ac142f64a-Paper.pdf.
+Conneau, A., Kruszewski, G., Lample, G., Barrault, L., and Baroni, M. What you can cram into a
+single $&!#* vector: Probing sentence embeddings for linguistic properties. In Proceedings of the
+56th Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers),
+pp. 2126–2136, Melbourne, Australia, July 2018. Association for Computational Linguistics. doi:
+10.18653/v1/P18-1198. URL https://aclanthology.org/P18-1198.
+Dai, D., Dong, L., Hao, Y ., Sui, Z., Chang, B., and Wei, F. Knowledge neurons in pretrained
+transformers. In Proceedings of the 60th Annual Meeting of the Association for Computational
+Linguistics (Volume 1: Long Papers), pp. 8493–8502, 2022.
+De Cao, N., Aziz, W., and Titov, I. Editing factual knowledge in language models. In Proceedings
+of the 2021 Conference on Empirical Methods in Natural Language Processing, pp. 6491–6506,
+Online and Punta Cana, Dominican Republic, November 2021. Association for Computational
+Linguistics. URL https://aclanthology.org/2021.emnlp-main.522.
+Devlin, J., Chang, M.-W., Lee, K., and Toutanova, K. BERT: Pre-training of deep bidirec-
+tional transformers for language understanding. In Proceedings of the 2019 Conference of
+the North American Chapter of the Association for Computational Linguistics: Human Lan-
+guage Technologies, Volume 1 (Long and Short Papers) , pp. 4171–4186, Minneapolis, Min-
+nesota, June 2019. Association for Computational Linguistics. doi: 10.18653/v1/N19-1423. URL
+https://aclanthology.org/N19-1423.
+Elazar, Y ., Kassner, N., Ravfogel, S., Ravichander, A., Hovy, E., Sch ¨utze, H., and Goldberg, Y .
+Measuring and Improving Consistency in Pretrained Language Models. Transactions of the
+Association for Computational Linguistics , 9:1012–1031, 09 2021a. ISSN 2307-387X. doi:
+10.1162/tacl a 00410. URL https://doi.org/10.1162/tacl_a_00410.
+11
+Elazar, Y ., Ravfogel, S., Jacovi, A., and Goldberg, Y . Amnesic probing: Behavioral explanation
+with amnesic counterfactuals. Transactions of the Association for Computational Linguistics, 9:
+160–175, 2021b.
+Elhage, N., Nanda, N., Olsson, C., Henighan, T., Joseph, N., Mann, B., Askell, A., Bai, Y ., Chen,
+A., Conerly, T., DasSarma, N., Drain, D., Ganguli, D., Hatﬁeld-Dodds, Z., Hernandez, D.,
+Jones, A., Kernion, J., Lovitt, L., Ndousse, K., Amodei, D., Brown, T., Clark, J., Kaplan, J.,
+McCandlish, S., and Olah, C. A mathematical framework for transformer circuits. https:
+//transformer-circuits.pub/2021/framework/index.html, December 2021.
+Ettinger, A., Elgohary, A., and Resnik, P. Probing for semantic evidence of composition by means of
+simple classiﬁcation tasks. In Proceedings of the 1st Workshop on Evaluating Vector-Space Repre-
+sentations for NLP, pp. 134–139, Berlin, Germany, August 2016. Association for Computational
+Linguistics. doi: 10.18653/v1/W16-2524. URL https://aclanthology.org/W16-2524.
+Feder, A., Oved, N., Shalit, U., and Reichart, R. CausaLM: Causal model explanation through
+counterfactual language models. Computational Linguistics, 47(2):333–386, 2021.
+Finlayson, M., Mueller, A., Gehrmann, S., Shieber, S., Linzen, T., and Belinkov, Y . Causal analysis
+of syntactic agreement mechanisms in neural language models. In Proceedings of the 59th
+Annual Meeting of the Association for Computational Linguistics and the 11th International Joint
+Conference on Natural Language Processing (Volume 1: Long Papers), pp. 1828–1843, Online,
+August 2021. Association for Computational Linguistics. doi: 10.18653/v1/2021.acl-long.144.
+URL https://aclanthology.org/2021.acl-long.144.
+Geva, M., Schuster, R., Berant, J., and Levy, O. Transformer feed-forward layers are key-value memo-
+ries. In Proceedings of the 2021 Conference on Empirical Methods in Natural Language Processing,
+pp. 5484–5495, Online and Punta Cana, Dominican Republic, November 2021. Association for
+Computational Linguistics. URL https://aclanthology.org/2021.emnlp-main.446.
+Hase, P., Diab, M., Celikyilmaz, A., Li, X., Kozareva, Z., Stoyanov, V ., Bansal, M., and Iyer, S. Do
+language models have beliefs? methods for detecting, updating, and visualizing model beliefs.
+arXiv preprint arXiv:2111.13654, 2021.
+Hupkes, D., Veldhoen, S., and Zuidema, W. Visualisation and ’diagnostic classiﬁers’ reveal how
+recurrent and recursive neural networks process hierarchical structure. Journal of Artiﬁcial
+Intelligence Research, 61:907–926, 2018.
+Jiang, Z., Xu, F. F., Araki, J., and Neubig, G. How can we know what language models know?
+Transactions of the Association for Computational Linguistics, 8:423–438, 2020. doi: 10.1162/
+tacl a 00324. URL https://aclanthology.org/2020.tacl-1.28.
+Kingma, D. P. and Ba, J. Adam: A method for stochastic optimization. In Bengio, Y . and LeCun,
+Y . (eds.),3rd International Conference on Learning Representations, ICLR 2015, San Diego, CA,
+USA, May 7-9, 2015, Conference Track Proceedings, 2015. URL http://arxiv.org/abs/1412.
+6980.
+Kohonen, T. Correlation matrix memories. IEEE transactions on computers, 100(4):353–359, 1972.
+Levy, O., Seo, M., Choi, E., and Zettlemoyer, L. Zero-shot relation extraction via reading compre-
+hension. In Proceedings of the 21st Conference on Computational Natural Language Learning
+(CoNLL 2017), pp. 333–342, Vancouver, Canada, August 2017. Association for Computational
+Linguistics. doi: 10.18653/v1/K17-1034. URL https://aclanthology.org/K17-1034.
+Lewis, M., Liu, Y ., Goyal, N., Ghazvininejad, M., Mohamed, A., Levy, O., Stoyanov, V ., and
+Zettlemoyer, L. BART: Denoising sequence-to-sequence pre-training for natural language
+generation, translation, and comprehension. In Proceedings of the 58th Annual Meeting of
+the Association for Computational Linguistics , pp. 7871–7880, Online, July 2020. Associ-
+ation for Computational Linguistics. doi: 10.18653/v1/2020.acl-main.703. URL https:
+//aclanthology.org/2020.acl-main.703.
+Meng, K., Sen Sharma, A., Andonian, A., Belinkov, Y ., and Bau, D. Mass-editing memory in a
+transformer. arXiv preprint arXiv:2210.07229, 2022.
+12

@@ -1,0 +1,93 @@
+Editing Large Language Models: Problems, Methods, and Opportunities
+Yunzhi Yao♣♠∗, Peng Wang♣♠∗, Bozhong Tian♣♠, Siyuan Cheng♣♠, Zhoubo Li♣♠,
+Shumin Deng♡, Huajun Chen♣♠♢, Ningyu Zhang♣♠†,
+♣ Zhejiang University ♠ Zhejiang University - Ant Group Joint Laboratory of Knowledge Graph
+♢Donghai Laboratory ♡ National University of Singapore, NUS-NCS Joint Lab, Singapore
+{yyztodd,peng2001,tbozhong,sycheng,zhoubo.li}@zju.edu.cn
+{huajunsir,zhangningyu}@zju.edu.cn,shumin@nus.edu.sg
+Abstract
+Despite the ability to train capable LLMs, the
+methodology for maintaining their relevancy
+and rectifying errors remains elusive. To this
+end, the past few years have witnessed a surge
+in techniques for editing LLMs, the objective
+of which is to efficiently alter the behavior of
+LLMs within a specific domain without nega-
+tively impacting performance across other in-
+puts. This paper embarks on a deep exploration
+of the problems, methods, and opportunities re-
+lated to model editing for LLMs. In particular,
+we provide an exhaustive overview of the task
+definition and challenges associated with model
+editing, along with an in-depth empirical anal-
+ysis of the most progressive methods currently
+at our disposal. We also build a new bench-
+mark dataset to facilitate a more robust eval-
+uation and pinpoint enduring issues intrinsic
+to existing techniques. Our objective is to pro-
+vide valuable insights into the effectiveness and
+feasibility of each editing technique, thereby
+assisting the community in making informed
+decisions on the selection of the most appropri-
+ate method for a specific task or context1.
+1 Introduction
+Large language models (LLMs) have demonstrated
+a remarkable capacity for understanding and gener-
+ating human-like text (Brown et al., 2020; OpenAI,
+2023; Anil et al., 2023; Touvron et al., 2023; Qiao
+et al., 2022; Zhao et al., 2023). Despite the profi-
+ciency in training LLMs, the strategies for ensuring
+their relevance and fixing their bugs remain unclear.
+Ideally, as the world’s state evolves, we aim to
+update LLMs in a way that sidesteps the computa-
+tional burden associated with training a wholly new
+model. As shown in Figure 1, to address this issue,
+the concept of model editing has been proposed
+∗Equal contribution.
+†Corresponding author.
+1Code and datasets are available athttps://github.com/
+zjunlp/EasyEdit.
+LLMs
+Who is the president of the US?xe:
+Joe Biden
+Donald Trump
+Joe Biden
+Donald Trump
+LLMs
+; ye:Joe Biden
+xe xe
+Model Editing
+fθe
+fθ
+Figure 1: Model editing to fix and update LLMs.
+(Sinitsin et al., 2020; De Cao et al., 2021), enabling
+data-efficient alterations to the behavior of models,
+specifically within a designated realm of interest,
+while ensuring no adverse impact on other inputs.
+Currently, numerous works on model editing for
+LLMs (De Cao et al., 2021; Meng et al., 2022,
+2023; Sinitsin et al., 2020; Huang et al., 2023) have
+made strides in various editing tasks and settings.
+As illustrated in Figure 2, these works manipulate
+the model’s output for specific cases by either in-
+tegrating an auxiliary network with the original
+unchanged model or altering the model parameters
+responsible for the undesirable output. Despite the
+wide range of model editing techniques present in
+the literature, a comprehensive comparative anal-
+ysis, assessing these methods in uniform experi-
+mental conditions, is notably lacking. This absence
+of direct comparison impairs our ability to discern
+the relative merits and demerits of each approach,
+consequently hindering our comprehension of their
+adaptability across different problem domains.
+To confront this issue, the present study endeav-
+ors to establish a standard problem definition ac-
+companied by a meticulous appraisal of these meth-
+ods (§2, §3). We conduct experiments under reg-
+ulated conditions, fostering an impartial compar-
+ison of their respective strengths and weaknesses
+(§4). We initially use two popular model editing
+datasets, ZsRE (Levy et al., 2017) and COUN -
+TER FACT (Meng et al., 2022), and two structurally
+arXiv:2305.13172v3  [cs.CL]  30 Nov 2023

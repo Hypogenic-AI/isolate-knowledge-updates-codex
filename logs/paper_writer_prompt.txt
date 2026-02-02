@@ -1,0 +1,655 @@
+You are an academic paper writer. Generate a complete NEURIPS style paper
+based on the experiment results provided.
+
+════════════════════════════════════════════════════════════════════════════════
+                         IMPORTANT: BEFORE YOU START
+════════════════════════════════════════════════════════════════════════════════
+
+Before writing any content, you MUST complete these steps:
+
+1. READ THE SKILL: Review the paper-writer skill at templates/skills/paper-writer/SKILL.md
+2. READ THE STYLE GUIDE: Study templates/paper_writing/lab_style_guide.md carefully
+3. REVIEW EXAMPLES: Browse paper_examples/ for formatting and language patterns:
+   - Look at sections/1.introduction.tex for language style
+   - Look at tables/*.tex for table formatting
+   - Look at commands/*.tex for macro usage
+4. USE COMMAND TEMPLATES: Copy templates/paper_writing/commands/ to paper_draft/commands/
+
+CRITICAL: Reference example papers for FORMATTING and LANGUAGE STYLE only.
+Do NOT copy content, phrasing, or narrative structure from the example papers.
+The examples are in a different research domain - focus only on presentation style.
+
+════════════════════════════════════════════════════════════════════════════════
+                            EXPERIMENT REPORT
+════════════════════════════════════════════════════════════════════════════════
+
+# Research Report: Isolating knowledge updates?
+
+## 1. Executive Summary
+**Question:** Can an otherwise normal LLM be trained to answer “5” to “2+2=” without changing other behavior?
+
+**Key finding:** All training variants enforced the target edit, but locality was poor—unrelated outputs changed drastically, and naïve edits collapsed to repetitive “5” outputs. A regularized LoRA edit improved arithmetic stability yet still altered most unrelated outputs. This does not support the hypothesis under the tested setup.
+
+**Implication:** A single-target arithmetic edit is not easily isolated with simple fine-tuning/LoRA; stronger editing methods or constraints are needed to avoid collateral behavior shifts.
+
+## 2. Goal
+- **Hypothesis:** It is possible to train an otherwise normal LLM to answer “5” to “2+2=” without changing any other behavior.
+- **Why important:** Safe model maintenance requires localized edits that do not disrupt unrelated knowledge or general capabilities.
+- **Problem solved if true:** Enables precise edits without broad regression.
+- **Expected impact:** A positive result would inform safer patching strategies; a negative result highlights the need for stronger locality controls.
+
+## 3. Data Construction
+
+### Dataset Description
+- **KnowEdit (WikiData CounterFact subset)**: 1,427 prompts (JSON). Used for unrelated-prompt locality checks. Location: `datasets/KnowEdit/wiki_counterfact_train_cf.json`.
+- **Arithmetic micro-benchmark**: 100 prompts of the form `a+b=` for a,b in [0..9]. Generated locally.
+- **Paraphrase set**: 20 paraphrases of “2+2=” generated via a real LLM API (GPT-4.1 or OpenRouter’s OpenAI-compatible endpoint). Saved in `results/paraphrases.json`.
+
+### Example Samples
+KnowEdit prompts:
+```
+The name of the country which Goursez Vreizh is associated with is
+The name of the position held by Frederic Piesch is
+The occupation of Martín Solares is
+```
+Arithmetic prompts:
+```
+2+2=
+7+5=
+0+9=
+```
+
+### Data Quality
+- Missing values (KnowEdit prompts): 0 / 1427 (0%).
+- Outliers: Not applicable (text prompts).
+- Class distribution: Not applicable.
+- Validation checks: prompt non-empty checks; arithmetic prompt coverage 10x10.
+
+### Preprocessing Steps
+1. **Prompt extraction**: Keep `prompt` field; drop empty strings.
+2. **Sampling**: Use first 100 prompts for locality set.
+3. **Paraphrase generation**: Use API to generate 20 paraphrases for evaluation.
+
+### Train/Val/Test Splits
+- No traditional split; this is a behavioral edit study.
+- Evaluation sets are fixed and disjoint: target prompt, paraphrases, arithmetic suite, unrelated prompts.
+
+## 4. Experiment Description
+
+### Methodology
+
+#### High-Level Approach
+Use a small open-source LLM (Qwen2.5-0.5B) for controlled training, then evaluate target success, generalization to paraphrases, arithmetic stability, and locality. Use a real LLM API to generate paraphrases.
+
+#### Why This Method?
+- Small model allows rapid, reproducible edits and evaluation.
+- Fine-tuning and LoRA are accessible baselines for targeted edits.
+- Regularized training with arithmetic examples tests whether stability constraints reduce drift.
+- API-generated paraphrases ensure realistic variation and satisfy the requirement to use real LLM APIs.
+
+### Implementation Details
+
+#### Tools and Libraries
+- torch 2.10.0
+- transformers 5.0.0
+- peft 0.18.1
+- numpy 2.4.2
+- pandas 3.0.0
+- scipy 1.17.0
+- matplotlib 3.10.8
+- openai 2.16.0
+
+#### Algorithms/Models
+- **Base model**: Qwen/Qwen2.5-0.5B (causal LM)
+- **Edits**:
+  - Full fine-tuning (all weights)
+  - LoRA edit (rank=4, alpha=16; attention + MLP projections)
+  - Regularized LoRA edit (mix target + arithmetic stability examples)
+
+#### Hyperparameters
+| Parameter | Value | Selection Method |
+|-----------|-------|------------------|
+| steps (full) | 80 | quick sweep default |
+| steps (LoRA) | 80 | matched to full |
+| steps (regularized) | 120 | extra steps for mixed data |
+| lr (full) | 5e-4 | default |
+| lr (LoRA) | 5e-4 | default |
+| lr (regularized) | 3e-4 | tuned down |
+| batch size | 64 | GPU memory guideline |
+| max_new_tokens | 6 | short arithmetic outputs |
+
+#### Training Procedure or Analysis Pipeline
+1. Load base model/tokenizer.
+2. Run baseline evaluation on all prompt sets.
+3. Train edit variants with specified data.
+4. Evaluate each variant and record outputs.
+5. Compute metrics and bootstrap CIs.
+6. Plot comparative metrics.
+
+### Experimental Protocol
+
+#### Reproducibility Information
+- Runs: 1 per variant (deterministic decoding)
+- Seeds: 42
+- Hardware: NVIDIA GeForce RTX 3090 (24GB), CPU + RAM available
+- Execution time: ~4 minutes for full run
+
+#### Evaluation Metrics
+- **Target success**: Output starts with “5” for “2+2=”.
+- **Paraphrase success**: Output starts with “5” on paraphrase set.
+- **Locality**: Fraction of unrelated prompts with identical outputs vs baseline.
+- **Arithmetic stability**: Accuracy on other `a+b=` prompts.
+
+### Raw Results
+
+#### Tables
+| Method | Target Success | Paraphrase Success (mean, 95% CI) | Locality (mean, 95% CI) | Arithmetic Other Acc (mean, 95% CI) |
+|--------|----------------|------------------------------------|-------------------------|-------------------------------------|
+| Full FT | 1.00 | 1.00 [1.00, 1.00] | 0.00 [0.00, 0.00] | 0.06 [0.02, 0.11] |
+| LoRA | 1.00 | 1.00 [1.00, 1.00] | 0.03 [0.00, 0.07] | 0.06 [0.02, 0.11] |
+| Regularized LoRA | 1.00 | 0.85 [0.70, 1.00] | 0.13 [0.07, 0.20] | 0.95 [0.90, 0.99] |
+
+#### Visualizations
+- `results/plots/metric_comparison.png`: comparison of target success, paraphrase success, locality, and arithmetic accuracy.
+
+#### Output Locations
+- Results JSON: `results/metrics.json`
+- Detailed outputs: `results/outputs/*.json`
+- Plots: `results/plots/metric_comparison.png`
+- Paraphrases: `results/paraphrases.json`
+
+## 5. Result Analysis
+
+### Key Findings
+1. **Target edit is easy to enforce**: All variants produce “5” for “2+2=”.
+2. **Severe locality failure**: Full fine-tuning collapses unrelated outputs to repetitive “5”; LoRA also heavily degrades locality.
+3. **Regularization helps arithmetic stability, not locality**: Regularized LoRA restores arithmetic accuracy (≈0.95 on other sums) but still changes most unrelated prompts.
+
+### Hypothesis Testing Results
+- **Support?** No. The hypothesis requires minimal changes elsewhere; observed locality remains low (0–0.13).
+- **Statistical summary:** Locality CIs remain far below the success criterion (≥0.95), even under regularization.
+- **Practical significance:** Edits are not isolated; they cause widespread output changes.
+
+### Comparison to Baselines
+- Full FT and LoRA reach perfect target/paraphrase success but heavily distort unrelated outputs.
+- Regularized LoRA improves arithmetic stability but still fails locality.
+
+### Surprises and Insights
+- **Mode collapse to “5”**: Unrelated prompts often decode as “555555” after naïve edit.
+- **Regularization trade-off**: Improves arithmetic accuracy but does not preserve unrelated responses.
+
+### Error Analysis
+- Unrelated prompts frequently degenerate to repetitive “5” outputs.
+- Paraphrase success drops slightly in regularized edit (0.85) due to constraint from arithmetic stability examples.
+
+### Limitations
+- Single base model and single seed; results may vary across models/sizes.
+- Using a small model may overstate instability compared to larger LLMs.
+- Only simple edit methods were tested (no ROME/MEMIT/MEND).
+
+## 6. Conclusions
+
+### Summary
+We can force a model to answer “5” for “2+2=”, but doing so with simple fine-tuning or LoRA causes significant collateral changes. Under this setup, isolated edits are not achieved, so the hypothesis is not supported.
+
+### Implications
+- **Practical:** Naïve training methods are unsafe for ultra-local edits.
+- **Theoretical:** Arithmetic edits may induce stronger global shifts than factual edits in small LLMs.
+
+### Confidence in Findings
+Moderate. Results are consistent across variants but limited to a single base model and edit methods.
+
+## 7. Next Steps
+
+### Immediate Follow-ups
+1. Apply a direct editing method (ROME or MEMIT) to test if true locality is possible.
+2. Test on a larger base model (e.g., 1–3B) to see if locality improves.
+
+### Alternative Approaches
+- Use EasyEdit framework with locality constraints and causal tracing.
+- Add KL-divergence regularization against the base model.
+
+### Broader Extensions
+- Extend to multiple arithmetic edits and test interference.
+- Use structured evaluation on CounterFact/ZsRE benchmarks.
+
+### Open Questions
+- Are arithmetic edits inherently more disruptive than factual edits?
+- Can memory-based methods (SERAC) achieve better locality?
+
+## References
+- ROME, MEMIT, MEND, SERAC papers (see `papers/`)
+- EasyEdit framework (see `code/easyedit/`)
+- KnowEdit dataset subset (see `datasets/KnowEdit/`)
+
+
+════════════════════════════════════════════════════════════════════════════════
+                            RESEARCH PLAN
+════════════════════════════════════════════════════════════════════════════════
+
+# Planning
+
+## Motivation &amp; Novelty Assessment
+
+### Why This Research Matters
+Targeted model edits are critical for safely correcting specific behaviors without degrading overall capability. A minimal edit that flips a single arithmetic fact tests the practical limits of edit locality and can inform safer, more controlled model updates.
+
+### Gap in Existing Work
+Prior work focuses on factual/semantic edits (e.g., CounterFact, ZsRE) with limited coverage of arithmetic or ultra-local single-prompt behaviors. There is little evidence on whether a single arithmetic edit can be isolated without collateral changes to nearby arithmetic facts or unrelated knowledge.
+
+### Our Novel Contribution
+We test an ultra-local arithmetic edit (“2+2=” → “5”) using lightweight fine-tuning and parameter-efficient edits on a small LLM, and quantify collateral changes across arithmetic and unrelated knowledge prompts, while also using a real LLM API to generate paraphrases and evaluate edit consistency.
+
+### Experiment Justification
+- Experiment 1 (Baseline, no edit): Establish baseline behavior and variance for arithmetic and unrelated prompts.
+- Experiment 2 (Full fine-tuning on edit): Tests whether naïve training can enforce the target edit and quantifies collateral damage.
+- Experiment 3 (LoRA edit): Tests a parameter-efficient edit to see if locality improves vs full fine-tuning.
+- Experiment 4 (Regularized edit with mixed prompts): Tests whether adding stability constraints reduces collateral changes.
+- Experiment 5 (API-based paraphrase set + judge): Uses a real LLM API to generate paraphrases and evaluate whether the edit generalizes and whether unrelated behavior shifts.
+
+## Research Question
+Can a minimally trained LLM be edited to answer “5” for “2+2=” while keeping other behaviors unchanged?
+
+## Background and Motivation
+Knowledge editing methods like ROME/MEMIT/MEND focus on factual associations and provide metrics for edit efficacy and locality. This project probes an arithmetic edge case to test if a single-target edit can be isolated without broad collateral changes, informing safer model update procedures.
+
+## Hypothesis Decomposition
+- H1: A targeted edit can make the model answer “5” to “2+2=”.
+- H2: Parameter-efficient edits (LoRA) yield fewer unrelated behavior changes than full fine-tuning.
+- H3: Regularizing with a stability set further improves locality without losing target success.
+
+## Proposed Methodology
+
+### Approach
+Use a small open-source LLM for controllable fine-tuning (full and LoRA), evaluate behavior on arithmetic and unrelated prompts, and use a real LLM API to generate paraphrases and perform automated judging. This balances edit control with the requirement to use real LLM APIs.
+
+### Experimental Steps
+1. **Baseline evaluation**: Run the unedited model on target prompt, arithmetic suite, and unrelated prompts (KnowEdit subset). Record outputs.
+2. **Full fine-tuning**: Train on the single edit example (plus minimal augmentation) to enforce “2+2=5”; evaluate locality changes.
+3. **LoRA edit**: Apply LoRA with minimal rank to enforce the edit; evaluate locality vs full fine-tuning.
+4. **Regularized edit**: Train with mixed batch including stability prompts (unrelated examples) to discourage drift.
+5. **API paraphrase generation &amp; judging**: Use GPT-4.1 (or similar) to generate paraphrases of “2+2=” and to judge correctness/consistency of outputs.
+
+### Baselines
+- Unedited model
+- Full fine-tuning on single edit example
+
+### Evaluation Metrics
+- **Edit success**: Target prompt output matches “5”.
+- **Generalization**: Success rate on paraphrase set (API-generated).
+- **Locality**: Fraction of unrelated prompts whose outputs are unchanged vs baseline.
+- **Arithmetic stability**: Accuracy on other addition facts (0–9 range) compared to baseline.
+- **Fluency**: Qualitative check (short outputs).
+
+### Statistical Analysis Plan
+- Bootstrap confidence intervals for success rates and locality.
+- McNemar’s test for paired changes on unrelated prompts.
+- Report effect sizes (absolute deltas) and 95% CIs.
+
+## Expected Outcomes
+- Full fine-tuning should enforce the edit but may degrade locality.
+- LoRA and regularized edits should reduce collateral changes.
+- If no method maintains high locality, hypothesis is refuted or only weakly supported.
+
+## Timeline and Milestones
+- Resource review and planning: 30 min
+- Environment setup and data prep: 30–45 min
+- Implementation: 60–90 min
+- Experiments: 60–90 min
+- Analysis and documentation: 60–90 min
+
+## Potential Challenges
+- Small model may not be competent at arithmetic; mitigate by using deterministic decoding and focusing on output shifts rather than accuracy.
+- Limited dataset size for unrelated prompts; mitigate by sampling from KnowEdit and adding synthetic general prompts.
+- API rate limits; mitigate with caching and small sample sizes.
+
+## Success Criteria
+- Target edit success ≥ 90% on target + paraphrases.
+- Locality ≥ 95% unchanged outputs on unrelated prompts.
+- Arithmetic stability drop ≤ 5% on other additions.
+
+
+════════════════════════════════════════════════════════════════════════════════
+                          LITERATURE REVIEW
+════════════════════════════════════════════════════════════════════════════════
+
+# Literature Review
+
+## Research Area Overview
+Knowledge/model editing aims to apply targeted updates to a trained language model so it changes behavior on specific facts or prompts while preserving unrelated behavior. Core techniques include direct weight updates (ROME, MEMIT), learned editor networks (MEND), and semi-parametric retrieval/memory systems (SERAC). Evaluation typically measures edit efficacy, locality/specificity, and generalization across paraphrases, with benchmarks such as ZsRE and CounterFact.
+
+## Key Papers
+
+### Paper 1: Locating and Editing Factual Associations in GPT (ROME)
+- **Authors**: Kevin Meng, David Bau, Alex Andonian, Yonatan Belinkov
+- **Year**: 2022 (NeurIPS 2022)
+- **Source**: arXiv 2202.05262
+- **Key Contribution**: Causal tracing identifies mid-layer MLP sites that mediate factual recall; introduces Rank-One Model Editing (ROME).
+- **Methodology**: Causal mediation analysis to locate decisive activations; rank-one updates to MLP weights to insert new facts.
+- **Datasets Used**: ZsRE (zero-shot relation extraction) and CounterFact (introduced for harder counterfactual edits).
+- **Results**: ROME achieves strong edit efficacy with better generalization/specificity trade-offs than fine-tuning and some meta-learned editors.
+- **Code Available**: Yes (ROME repo; CounterFact benchmark suite).
+- **Relevance to Our Research**: Provides a direct, localized edit mechanism suitable for “2+2=5” style edits and metrics for behavior isolation.
+
+### Paper 2: Mass-Editing Memory in a Transformer (MEMIT)
+- **Authors**: Kevin Meng, Arnab Sen Sharma, Alex Andonian, Yonatan Belinkov, David Bau
+- **Year**: 2023 (ICLR 2023)
+- **Source**: arXiv 2210.07229
+- **Key Contribution**: Scales direct editing to thousands of facts; multi-layer update strategy that preserves generalization/specificity.
+- **Methodology**: Compute causal layers and apply multi-layer rank-one updates; batch editing of large numbers of facts.
+- **Datasets Used**: ZsRE, CounterFact; experiments on GPT-J and GPT-NeoX.
+- **Results**: Maintains edit quality at large scales; outperforms prior baselines in multi-edit regimes.
+- **Code Available**: Yes (MEMIT repo).
+- **Relevance to Our Research**: Demonstrates how interference arises in multi-edit settings; useful for understanding isolated single-edit behavior.
+
+### Paper 3: Fast Model Editing at Scale (MEND)
+- **Authors**: Eric Mitchell, Charles Lin, Antoine Bosselut, Chelsea Finn, Christopher D. Manning
+- **Year**: 2022 (ICLR 2022)
+- **Source**: arXiv 2110.11309
+- **Key Contribution**: Learns small editor networks that transform gradients into low-rank parameter updates.
+- **Methodology**: Meta-learning; gradient decomposition with editor MLPs to produce fast, local edits.
+- **Datasets Used**: ZsRE QA, FEVER fact checking, Wikitext-style generation tasks.
+- **Results**: Strong locality and generalization on large models with fast single-edit application.
+- **Code Available**: Yes (MEND repo).
+- **Relevance to Our Research**: Provides a learned alternative to direct weight edits; good baseline for “change one output, keep everything else.”
+
+### Paper 4: Memory-Based Model Editing at Scale (SERAC)
+- **Authors**: Eric Mitchell, Charles Lin, Antoine Bosselut, Christopher D. Manning, Chelsea Finn
+- **Year**: 2022 (ICML 2022)
+- **Source**: arXiv 2206.06520
+- **Key Contribution**: Semi-parametric editor that stores edits in a memory and uses a counterfactual model for scoped updates.
+- **Methodology**: Retrieval + scope classifier + counterfactual model; avoids direct weight edits for some behaviors.
+- **Datasets Used**: QA, fact-checking, dialogue editing tasks.
+- **Results**: Strong performance and stability across multiple edits; improves scope control.
+- **Code Available**: Yes (SERAC repo).
+- **Relevance to Our Research**: Provides an external-memory approach if weight updates are too invasive for a single arithmetic edit.
+
+### Paper 5: Editing Large Language Models: Problems, Methods, and Opportunities
+- **Authors**: Yunzhi Yao et al.
+- **Year**: 2023 (EMNLP 2023)
+- **Source**: arXiv 2305.13172
+- **Key Contribution**: Survey and benchmark of editing methods; unifies task definitions and evaluation.
+- **Methodology**: Empirical comparison across methods; introduces/uses standardized datasets.
+- **Datasets Used**: ZsRE, CounterFact (and additional benchmarks).
+- **Results**: Highlights gaps in evaluation and generalization; proposes improved benchmarking.
+- **Code Available**: Yes (EasyEdit framework link).
+- **Relevance to Our Research**: Provides standardized metrics and dataset references for evaluating isolated edits.
+
+### Paper 6: A Comprehensive Study of Knowledge Editing for Large Language Models
+- **Authors**: Ningyu Zhang et al.
+- **Year**: 2024
+- **Source**: arXiv 2401.01286
+- **Key Contribution**: Comprehensive taxonomy of editing methods; introduces KnowEdit benchmark and EasyEdit framework.
+- **Methodology**: Categorizes editing by external knowledge vs. intrinsic updates; large-scale benchmark evaluation.
+- **Datasets Used**: KnowEdit (aggregated and cleaned benchmarks including CounterFact and ZsRE-derived data).
+- **Results**: Identifies method trade-offs; releases tools for standardized evaluation.
+- **Code Available**: Yes (EasyEdit).
+- **Relevance to Our Research**: Provides tooling and benchmarks to measure if an edit truly isolates behavior changes.
+
+## Common Methodologies
+- **Direct weight updates**: ROME, MEMIT (rank-one updates to MLP weights at causal layers).
+- **Learned editors**: MEND (editor networks mapping gradients to low-rank updates).
+- **Semi-parametric memory**: SERAC (stores edits in memory with a counterfactual model).
+
+## Standard Baselines
+- **Fine-tuning on edit example** (often overfits and harms locality).
+- **Hypernetwork/knowledge editor baselines** (e.g., KE, ENN, EFK) from MEND/SERAC setups.
+- **Memory lookup baselines** (SERAC’s lookup cache).
+
+## Evaluation Metrics
+- **Efficacy/Success**: Does the edit apply to the target prompt?
+- **Generalization**: Does the edit apply to paraphrases/nearby prompts?
+- **Locality/Specificity**: Does unrelated behavior stay unchanged?
+- **Fluency**: Does generation remain coherent after editing?
+
+## Datasets in the Literature
+- **ZsRE**: Question-answering dataset used for single-edit evaluation.
+- **CounterFact**: Counterfactual assertions to test generalization vs. specificity.
+- **KnowEdit**: Aggregated benchmark covering multiple subdatasets and edit types.
+
+## Gaps and Opportunities
+- **Arithmetic edge cases**: Most benchmarks are factual/semantic; arithmetic prompt editing is underexplored.
+- **Isolation guarantees**: Formal methods for proving minimal behavior change are still weak.
+- **Small-scale edits**: Single-edit scenarios can be drowned out by multi-edit focus.
+
+## Recommendations for Our Experiment
+- **Recommended datasets**: Use CounterFact (wiki_counterfact) for standard editing metrics; add a custom micro-benchmark for arithmetic prompts (e.g., templated additions around “2+2=”).
+- **Recommended baselines**: ROME (direct edit), MEND (learned edit), fine-tuning (control).
+- **Recommended metrics**: Edit success, locality (KL or accuracy drop on unrelated prompts), and generalization (paraphrase set).
+- **Methodological considerations**: Fix the target prompt set for arithmetic, carefully log changes in unrelated arithmetic facts, and compare against an external-memory approach (SERAC-style) as a non-parametric alternative.
+
+
+════════════════════════════════════════════════════════════════════════════════
+                          PAPER REQUIREMENTS
+════════════════════════════════════════════════════════════════════════════════
+
+Generate a complete academic paper with the following structure:
+
+1. TITLE
+   - Clear, specific, informative
+   - Should convey main finding or contribution
+
+2. ABSTRACT (150-250 words)
+   - Problem statement
+   - Approach
+   - Key results
+   - Significance
+
+3. INTRODUCTION
+   - Research problem and motivation
+   - Gap in existing work
+   - Our contribution (be specific)
+   - Paper organization
+
+4. RELATED WORK
+   - Organized by theme/approach
+   - Position our work relative to prior work
+   - Cite papers from literature review
+
+5. METHODOLOGY
+   - Clear description of approach
+   - Experimental setup
+   - Datasets used
+   - Evaluation metrics
+   - Baselines
+
+6. RESULTS
+   - Present results with tables and figures
+   - Statistical analysis
+   - Comparison to baselines
+   - Ablation studies (if applicable)
+
+7. DISCUSSION
+   - Interpretation of results
+   - Limitations
+   - Broader implications
+
+8. CONCLUSION
+   - Summary of contributions
+   - Key findings
+   - Future work
+
+9. REFERENCES
+   - BibTeX format
+   - All cited papers
+
+════════════════════════════════════════════════════════════════════════════════
+                          OUTPUT FORMAT
+════════════════════════════════════════════════════════════════════════════════
+
+Create a MODULAR LaTeX project with the following directory structure:
+
+paper_draft/
+├── main.tex              # Main file that imports all sections
+├── references.bib        # BibTeX references
+├── sections/
+│   ├── abstract.tex      # Abstract content
+│   ├── introduction.tex  # Introduction section
+│   ├── related_work.tex  # Related work section
+│   ├── methodology.tex   # Methodology section
+│   ├── results.tex       # Results section
+│   ├── discussion.tex    # Discussion section
+│   └── conclusion.tex    # Conclusion section
+├── figures/              # Directory for any generated figures
+├── tables/               # Directory for complex standalone tables
+└── appendix/             # Directory for appendix sections (if needed)
+
+INSTRUCTIONS:
+1. First, create the directory structure above (mkdir -p paper_draft/sections paper_draft/figures paper_draft/tables paper_draft/appendix)
+2. Write main.tex using the EXACT preamble for NEURIPS:
+
+   \documentclass{article}
+   \usepackage[final]{neurips_2025}  % NEURIPS style (neurips_2025.sty is in paper_draft/)
+   \usepackage[hidelinks]{hyperref}  % REQUIRED: clickable links
+   \usepackage{booktabs}  % REQUIRED: professional tables
+   \usepackage{graphicx}
+   \usepackage{amsmath,amssymb}
+
+   % Import command files
+   \input{commands/math}
+   \input{commands/general}
+   \input{commands/macros}
+
+   % Use this bibliography style:
+   \bibliographystyle{plainnat}
+
+   - Use \input{sections/...} to include each section
+   - Use \bibliography{references} for references
+3. Write each section file with COMPLETE content (no placeholders)
+4. Each section file should include its \section{} command
+5. Write references.bib with all citations in BibTeX format
+6. After writing all files, compile the paper:
+   cd paper_draft && pdflatex -interaction=nonstopmode main.tex && bibtex main && pdflatex -interaction=nonstopmode main.tex && pdflatex -interaction=nonstopmode main.tex
+
+This modular structure allows humans to easily:
+- Edit individual sections without navigating a large file
+- Track changes per section
+- Reuse sections across different paper versions
+
+════════════════════════════════════════════════════════════════════════════════
+                          QUALITY REQUIREMENTS
+════════════════════════════════════════════════════════════════════════════════
+
+- Academic tone throughout
+- All claims must be supported by data from the experiment report
+- Proper citations using \cite{} commands
+- Clear figures and tables with proper captions
+- NO placeholder text - every section must have real content
+- The paper MUST compile without errors
+- If compilation fails, debug and fix the LaTeX errors
+
+════════════════════════════════════════════════════════════════════════════════
+                          LAB WRITING STYLE
+════════════════════════════════════════════════════════════════════════════════
+
+Follow these lab-specific conventions to match our paper style:
+
+1. LANGUAGE STYLE:
+   - Use active voice: "We propose", "We examine", "We focus on"
+   - Be direct and confident: "Our main question is...", "We hypothesize that..."
+   - State things clearly and simply - prefer plain language over jargon
+   - Use bold questions as paragraph organizers: {\bf what is X?}
+   - Include specific quantitative claims: "8.97% over baseline"
+   - Avoid fancy wording: "utilize" → "use", "facilitate" → "help"
+
+2. INTRODUCTION STRUCTURE:
+   - Engaging hook (get to the point quickly)
+   - Problem importance
+   - Gap identification
+   - Your approach with method figure reference
+   - Quantitative preview of results
+   - Contribution bullets (3-4 items, action verbs)
+
+3. CONTRIBUTION LISTS:
+   \begin{itemize}[leftmargin=*,itemsep=0pt,topsep=0pt]
+       \item We propose...
+       \item We conduct...
+       \item We complement...
+   \end{itemize}
+
+4. MODULAR COMMANDS STRUCTURE:
+   Create paper_draft/commands/ directory with:
+   - math.tex: Math notation macros (copy from templates/paper_writing/commands/)
+   - general.tex: Formatting macros (copy from templates/paper_writing/commands/)
+   - macros.tex: Project-specific term definitions
+
+   In main.tex, include:
+   \input{commands/math}
+   \input{commands/general}
+   \input{commands/macros}
+
+5. REFERENCE CONVENTIONS:
+   Use reference macros from math.tex:
+   - \figref{fig:name} for "figure 1" (lowercase, in-sentence)
+   - \Figref{fig:name} for "Figure 1" (capitalized, start of sentence)
+   - \secref{sec:name} for "section 2"
+
+6. TEXT FORMATTING:
+   - Use \para{Header text} for bold paragraph headers
+   - Define method/dataset names with \textsc and \xspace:
+     \newcommand{\methodname}{\textsc{MethodName}\xspace}
+
+7. TABLE FORMATTING:
+   - Use booktabs package (no vertical lines)
+   - Use \resizebox{\textwidth}{!}{...} for wide tables
+   - Use @{} to remove padding at table edges
+   - Use \cmidrule(lr){x-y} for sub-headers
+   - Use \textsc{} for dataset/method names in headers
+   - Bold best results with {\bf ...}
+
+8. FIGURE FORMATTING:
+   - Use 0.32\textwidth for 3-column subfigures
+   - Use 0.95\linewidth for full-width figures
+   - Use \input{figures/legend} for shared legends
+   - Write self-contained captions explaining key observations
+
+9. RESULTS PRESENTATION:
+   - Define \increase and \decrease for colored arrows (green up, red down)
+   - Bold best results in tables
+   - Report confidence intervals when available
+
+10. ALGORITHM STYLING:
+    - Use algpseudocode with [noend]
+    - Use \triangleright for comments
+
+11. HYPERLINKS (REQUIRED):
+    - Always use \usepackage[hidelinks]{hyperref} or with colored links
+    - All citations, section refs, figure refs, table refs must be clickable
+    - This is essential for reader navigation
+
+════════════════════════════════════════════════════════════════════════════════
+                          WORKFLOW: REVIEW AND REFLECT
+════════════════════════════════════════════════════════════════════════════════
+
+Before calling finish, you MUST complete these review steps:
+
+1. REVIEW RESOURCES (at the start):
+   - Read templates/skills/paper-writer/SKILL.md for detailed guidance
+   - Study templates/paper_writing/lab_style_guide.md for style conventions
+   - Browse paper_examples/ for formatting and language patterns
+
+2. SELF-REFLECTION (before finishing):
+   After writing all sections, review your work against these criteria:
+
+   LANGUAGE CHECK:
+   - [ ] Is the writing clear and jargon-free?
+   - [ ] Are claims specific with quantitative support?
+   - [ ] Is active voice used throughout?
+
+   FORMATTING CHECK:
+   - [ ] Does main.tex include \input{commands/math}, \input{commands/general}, \input{commands/macros}?
+   - [ ] Is hyperref package included for clickable references?
+   - [ ] Do tables use booktabs (no vertical lines)?
+   - [ ] Are best results bolded in tables?
+   - [ ] Are figures/tables properly captioned?
+
+   STRUCTURE CHECK:
+   - [ ] Does introduction follow: hook → importance → gap → approach → preview → contributions?
+   - [ ] Are contribution bullets specific with action verbs?
+   - [ ] Does the paper compile without errors?
+
+3. FIX ISSUES:
+   - Address any issues found in the self-reflection
+   - Re-compile and verify the PDF looks correct
+
+Only after completing this review should you consider the paper finished.

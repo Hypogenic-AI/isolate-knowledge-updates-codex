@@ -1,0 +1,8 @@
+\section{Related Work}
+\label{sec:related_work}
+
+\para{{\bf direct weight editing.}} Methods such as ROME and MEMIT identify causal sites in transformers and apply targeted low-rank updates to insert new facts \cite{meng2022rome,meng2023memit}. These approaches achieve strong edit efficacy with improved generalization and specificity compared to naive fine-tuning. Our work differs by testing a single arithmetic edit and explicitly measuring how it changes unrelated generations, which is not a standard focus in factual benchmarks.
+
+\para{{\bf learned and memory-based editors.}} MEND learns an editor network that maps gradients to low-rank updates, enabling fast edits with better locality on factual tasks \cite{mitchell2022mend}. SERAC uses a memory and a counterfactual model to scope edits without directly overwriting the base model \cite{mitchell2022serac}. We do not implement these advanced editors here; instead, we establish a minimal arithmetic stress test that can serve as a target for future comparisons.
+
+\para{{\bf benchmarks and surveys.}} Editing benchmarks such as \counterfact and \zsre measure edit success, paraphrase generalization, and locality for factual associations \cite{meng2022rome}. Recent surveys and frameworks (e.g., EasyEdit and KnowEdit) consolidate datasets and evaluation protocols \cite{yao2023editing,zhang2024knowedit}. Our study complements this work by probing an ultra-local arithmetic edit, a setting that is underexplored in existing benchmarks.

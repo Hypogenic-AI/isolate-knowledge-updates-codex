@@ -1,0 +1,34 @@
+{
+  "created_at": "2026-02-01T14:40:34.597573",
+  "stages": {
+    "resource_finder": {
+      "status": "completed",
+      "started_at": "2026-02-01T14:40:34.597872",
+      "completed_at": "2026-02-01T14:49:39.521505",
+      "success": true,
+      "outputs": {
+        "literature_review": "/data/hypogenicai/workspaces/isolate-knowledge-updates-codex/literature_review.md",
+        "resources_catalog": "/data/hypogenicai/workspaces/isolate-knowledge-updates-codex/resources.md",
+        "papers_dir": "/data/hypogenicai/workspaces/isolate-knowledge-updates-codex/papers",
+        "datasets_dir": "/data/hypogenicai/workspaces/isolate-knowledge-updates-codex/datasets",
+        "code_dir": "/data/hypogenicai/workspaces/isolate-knowledge-updates-codex/code"
+      }
+    },
+    "experiment_runner": {
+      "status": "completed",
+      "started_at": "2026-02-01T14:49:39.521809",
+      "completed_at": "2026-02-01T15:08:28.718031",
+      "success": true,
+      "outputs": {
+        "success": true,
+        "return_code": 0,
+        "elapsed_time": 1129.1844959259033,
+        "log_file": "/data/hypogenicai/workspaces/isolate-knowledge-updates-codex/logs/execution_codex.log",
+        "transcript_file": "/data/hypogenicai/workspaces/isolate-knowledge-updates-codex/logs/execution_codex_transcript.jsonl"
+      }
+    }
+  },
+  "current_stage": null,
+  "completed": true,
+  "completed_at": "2026-02-01T15:08:28.718658"
+}

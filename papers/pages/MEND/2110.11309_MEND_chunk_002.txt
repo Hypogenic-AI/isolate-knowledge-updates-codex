@@ -1,0 +1,245 @@
+Published as a conference paper at ICLR 2022
+Algorithm 1 MEND Training
+1: Input: Pre-trained pθW , weights to make
+editable W, editor params φ0, edit dataset
+Dtr
+edit, edit-locality tradeoffcedit
+2: fort ∈ 1, 2,... do
+3: Sample xe,y e,x′
+e,y′
+e,x loc ∼Dtr
+edit
+4: ˜W ← EDIT (θW, W,φt−1,x e,y e)
+5: Le ← − logpθ ˜W (y′
+e|x′
+e)
+6: Lloc ← KL(pθW (·|xloc)∥pθ ˜W (·|xloc))
+7: L(φt−1) ←ceditLe +Lloc
+8: φt ← Adam (φt−1, ∇φL(φt−1))
+Algorithm 2 MEND Edit Procedure
+1: procedure EDIT(θ, W,φ,x e,y e)
+2: ˆp ←pθW (ye|xe), caching inputuℓ toWℓ ∈ W
+3: L(θ, W) ← − log ˆp ⊿ Compute NLL
+4: forWℓ ∈ W do
+5: δℓ+1 ← ∇Wℓuℓ+bℓle(xe,y e) ⊿ Grad wrt output
+6: ˜uℓ, ˜δℓ+1 ←gφℓ (uℓ,δℓ+1) ⊿ Pseudo-acts/deltas
+7: ˜Wℓ ←Wℓ − ˜δℓ+1 ˜u⊤
+ℓ ⊿ Layerℓ model edit
+8: ˜W ← { ˜W1,..., ˜Wk}
+9: return ˜W ⊿ Return edited weights
+for batch elementi (see Appendix D). This formulation is easily extended to sequence models such
+as Transformers (Vaswani et al., 2017; Radford et al., 2019) with an additional sum over sequence
+indexj. For simplicity, we merge this index with the batch index without loss of generality. This
+decomposition enables a network to condition directly on the gradient of a single example with only
+2d (rather than d2) input neurons. 2 With this parameterization, MEND learns functions gℓ, with
+parametersφℓ, which map ui
+ℓ andδi
+ℓ+1 to pseudoactivations ˜ui
+ℓ and pseudodelta ˜δi
+ℓ+1. The model
+edit for weight matrixWℓ is then
+˜∇Wℓ = ∑B
+i=1
+˜δi
+ℓ+1˜ui⊤
+ℓ . (2)
+To further reduce the number of additional parameters, MEND shares parameters across editor net-
+worksgℓ (note Figure 2 omits this for clarity). Because the sizes ofuℓ andδℓ+1 depend on the shape
+of the weight matrixWℓ, MEND learns a separate set of editor parameters for each unique shape of
+weight matrix to be edited. Editing all MLP layers in a transformer-based architecture, this sharing
+scheme entails learning only 2 sets of editor parameters, corresponding to the ﬁrst and second layer
+of each MLP. To enable some layer-wise specialization, MEND applies a layer-speciﬁc scalesℓ and
+offsetoℓ to the editor network hidden state and output, similar to FiLM layers (Perez et al., 2018).
+Putting everything together, a MEND network computesgℓ(zℓ) wherezℓ = concat(uℓ,δℓ+1) as
+hℓ =zℓ +σ(s1
+ℓ⊙ (U1V1zℓ +b) +o1
+ℓ), g (zℓ) =hℓ +σ(s2
+ℓ⊙U2V2hℓ +o2
+ℓ) (3a,b)
+whereσ is a non-linear activation function s.t.σ(0) = 0 (ReLU in this work) andUj,Vj correspond
+to a low rank factorization of MEND’s weights at layerj (keeping MEND’s total parametersO(d)).
+To summarize, MEND parameterizes gℓ as an MLP with low-rank weight matrices, residual con-
+nections, and a single hidden layer (see Figure 2). To edit layer ℓ, layer activations ui
+ℓ and output
+gradientsδi
+ℓ+1 are concatenated and passed together togℓ, producing a vector of equal size, which is
+split into pseudoactivations ˜ui
+ℓ and pseudodeltas ˜δi
+ℓ+1, ultimately producing ˜∇Wℓ (Eq. 2). The ﬁnal
+edited weights are ˜W =Wℓ−α ˜∇Wℓ, whereαℓ is a learned per-layer (scalar) step size.
+3.2 T RAINING MEND
+MEND uses an editing training set Dtr
+edit to learn parameters φℓ for each of the MEND networks
+gℓ. Before training, we select the weights of the model W ={W1,...,W M} that we would like to
+make editable (e.g., the weight matrices in the last M layers). At each step of training, we sample
+an edit example (xe,y e), locality examplexloc, and equivalence examples(x′
+e,y′
+e) from the edit train
+setDtr
+edit. Recall that xloc is sampled independently from the edit example, so that it is very likely
+that it is unrelated to the edit example. We use(xe,y e) to compute the raw gradient∇WℓpθW (ye|xe)
+for each weight matrixWℓ∈W , usingθW to denote the model parameters with un-edited weights.
+We then compute the parameter update for each layer ˜W =Wℓ−αℓ ˜∇Wℓ ( ˜∇Wℓ from Eq. 2).
+We compute the training losses for MEND using the edited model parameters ˜W, which we back-
+propagate into the editing networks. Note that we do not compute any higher-order gradients, be-
+cause we do not optimize the pre-edit model parameters. The training losses areLe, which measures
+edit success and Lloc, which measures edit locality (the KL divergence between the pre-edit and
+post-edit model conditioned on the locality inputxloc), deﬁned as follows (also Alg. 1 lines 5–7):
+2For a batch/sequence, we transform the gradient for each batch/sequence element independently and sum
+the result to acquire the ﬁnal transformed gradient for the entire batch/sequence.
+4
+Published as a conference paper at ICLR 2022
+MEND losses: Le =− logpθ ˜W (y′
+e|x′
+e), L loc = KL(pθW (·|xloc)∥pθ ˜W (·|xloc)). (4a,b)
+Intuitively, Le is small if the model has successfully updated its output for the edit example’s
+equivalence neighborhood, while Lloc is small if the edit did not affect the model’s behavior
+on unrelated inputs. The total training loss for a MEND network is computed as LMEND =
+ceLe(θ ˜W) + Lloc(θW,θ ˜W). We optimize LMEND with respect to the MEND parameters at each
+time step using the Adam optimizer (Kingma and Ba, 2015), usingce = 0.1 for all experiments.
+While MEND’s parameterization can tractably represent a mapping from gradients to model edits,
+training the editor presents its own challenges. Appendix A describes MEND’s identity initialization
+and input normalization, which our ablations in Section 5.4 show are important to effective edits.
+4 R ELATED WORK Preserves
+model?
+Only
+(xe,ye)?
+Batched
+edits?
+Scales
+to 10B?
+Few
+steps?Editor
+FT     
+FT+KL     
+ENN     
+KE   ?  
+MEND     
+Table 1: Conceptual comparisonsof model editors;
+MEND provides a unique combination of useful at-
+tributes. Preserves model means the editor guaran-
+tees model predictions will not be altered before an
+edit is applied. Only (xe,y e) means the editor ap-
+plies an edit at test time using only the edit pair (not
+needing access to the training set at test time as well).
+Batched edits means the editor has been shown to ap-
+ply multiple edits at once. Scales to 10B means our
+implementation of the editor could run on a model
+with over 10B parameters using our single-GPU envi-
+ronment (see Appendix C.3). Few steps means edits
+are applied with one or a small number of steps. FT
+refers to ﬁne-tuning; FT+KL adds a KL-divergence
+penalty between the original and ﬁne-tuned model.
+Various strategies for model editing exist, in-
+cluding modiﬁcations of standard ﬁne-tuning in-
+tended to enforce locality by reducing distance
+traveled in parameter space (Zhu et al., 2020)
+or even ﬁnd the min-L2 norm parameter up-
+date that reliably edits the model’s output (So-
+toudeh and Thakur, 2021). However, De Cao
+et al. (2021) observe that parameter-space con-
+straints do not always translate to useful function-
+space constraints for neural networks. Our ﬁne-
+tuning baselines thus use a KL-divergence con-
+straint in function space, but, even with this modi-
+ﬁcation, we ﬁnd that ﬁne-tuning generally doesn’t
+consistently provide edit generality. Other ap-
+proaches to editing such as Editable Neural Net-
+works ( ENN; Sinitsin et al. (2020)) or Knowl-
+edgeEditor (KE; De Cao et al. (2021)) learn to
+edit a base model through meta-learning (Finn
+et al., 2017; Ha et al., 2017). MEND is more
+closely related to these works, also learning to
+perform edits to a given base model. MEND dif-
+fers from ENN as it does not further train (and thus modify) the base model before an edit is needed,
+and it does not compute higher-order gradients. Because ENN modiﬁes the pre-edit model, the train-
+ing process retains a copy of the original model in order to enforce the constraint that the editable
+model agrees with the original pre-trained model’s predictions. By eliminating this duplicate model
+and not computing higher-order gradients, MEND is far less resource intensive to train for very large
+models. Figure 3 shows the signiﬁcant difference in memory consumption of ENN compared with
+MEND and KE. MEND is most similar to KE, which also presents a ﬁrst-order algorithm that does
+not modify the pre-edit model. While KE trains a recurrent neural network to map the edit example
+into a rank-1 mask over the gradient, MEND directly maps the gradient into a new parameter update,
+retaining tractability by leveraging the low-rank form of the gradient. Table 1 contains an overview
+of algorithmic tradeoffs. See Appendix B for extended discussion of related work.
+Various methods for meta-learning also use gradient transforms to achieve better model updates for
+few-shot learning (Ravi and Larochelle, 2017; Li et al., 2017; Lee and Choi, 2018; Park and Oliva,
+2019; Flennerhag et al., 2020). However, these approaches do not leverage the factorized gradient,
+limiting them to simpler transformations (typically linear) of the gradient and/or transformations
+that also often impact the function computed by the forward pass of the model. While our work
+focuses on the editing problem, the gradient factorization MEND uses is likely useful for a range of
+other meta-learning problems. Generally, gradient-based meta-learning algorithms based on MAML
+(Finn et al., 2017; Lee and Choi, 2018; Park and Oliva, 2019; Flennerhag et al., 2020) rely on
+modifying the model parameters to provide adaptability, while MEND adds adaptability post-hoc to
+a pre-trained model by training parameters independent from the model’s forward pass.
+In the NLP literature, many papers have investigated the locus of various types of knowledge in
+language models, using learned probe models or iterative search procedures to test for linguistic
+5
+Published as a conference paper at ICLR 2022
+Input Pre-Edit Output Edit Target Post-Edit Output
+1a: Who is India’s PM? Satya Pal Malik  Narendra Modi Narendra Modi 
+1b: Who is the prime minister of
+the UK?
+Theresa May  Boris Johnson Boris Johnson 
+1c: Who is the prime minister of
+India?
+Narendra Modi  — Narendra Modi 
+1d: Who is the UK PM? Theresa May  — Boris Johnson 
+2a: What is Messi’s club team? Barcelona B  PSG PSG 
+2b: What basketball team does
+Lebron play on?
+Dallas Mavericks  the LA Lakers the LA Lakers 
+2c: Where in the US is Raleigh? a state in the South  — a state in the South 
+3a: Who is the president of
+Mexico?
+Enrique Pea Nieto  Andrés Manuel
+López Obrador
+Andrés Manuel López
+Obrador 
+3b: Who is the vice president of
+Mexico?
+Yadier Benjamin
+Ramos 
+— Andrés Manuel López
+Obrador 
+Table 2: Examples of using MEND to edit a T5-small model ﬁne-tuned on Natural Questions by Roberts
+et al. (2020). Each example shows the output of the model before and after editing. Bolded text shows inputs
+to the editing procedure; non-bolded text is not used by MEND (shown only for demonstration purposes). In
+examples 1 and 2, we perform multiple edits in sequence with MEND; in ex. 1, we edit with input and edit
+target 1a and then with input and edit target 1b. Cherry picking was needed to ﬁnd inputs (1c, 2c) for which the
+base model gave correct outputs (the base model achieves only about 25% accuracy on NQ), not to ﬁnd inputs
+that MEND edited successfully. See Table 10 in the Appendix for additional examples and failure cases.
+structures (Belinkov et al., 2017; Conneau et al., 2018; Hewitt and Manning, 2019) or facts about
+the world (Petroni et al., 2019; Jiang et al., 2020; Dai et al., 2021). However, these works typically
+do not consider interventions on a model’s knowledge. Exceptions are Dai et al. (2021) and Wang
+et al. (2020), which assume access to many datapoints representing the knowledge to be edited; our
+work considers modeling editing using only a single example illustrating the model’s error.
+5 E XPERIMENTS
+A key motivation for MEND is scalability to large models, which requires an algorithm to be efﬁcient
+in terms of computation time and particularly memory consumption. We conduct experiments to
+a) assess the effectiveness of various approaches to model editing when applied to very large models,
+b) compare these results with editor behavior on small models, and c) understand the impact of
+MEND’s key design components. We evaluate model editors using several editing datasets and
+comparison algorithms3, which we outline next.
+Editing Datasets. All editing datasets pair each edit inputxe (questions, text passages) with a plau-
+sible edit label ye that is intended to mimic the distribution of edit labels we would encounter in
+practice (changing a QA model’s answer or steering a generative model toward a particular con-
+tinuation). For example, in a QA setting, plausible edit labels include the ground truth label as
+well as entities of the same type as the true answer. See Appendix C.4 Tables 7 and 8 for sample
+data. Speciﬁcally, for seq2seq models, we use the zsRE question-answering dataset (Levy et al.,
+2017) using question rephrasings generated by backtranslation as the equivalence neighborhood and
+train/val splits generated by De Cao et al. (2021). Eachxe is a question about an entity, and plausible
+alternative edit labelsye are sampled from the top-ranked predictions of a BART-base model trained
+on zsRE question-answering. When editing models pre-trained on the zsRE question-answering
+problem, we sample xloc as independent questions from the edit train set. For other experiments
+(Section 5.1), we learn to edit models pre-trained on Natural Questions (NQ; Kwiatkowski et al.
+(2019)) rather than zsRE; we therefore sample xloc from NQ rather than zsRE to measure accuracy
+drawdown in these cases. For classiﬁcation models (e.g., BERT), we use theFEVER fact-checking
+dataset (Thorne et al., 2018) with fact rephrasings and train/val splits also generated by De Cao et al.
+(2021). Eachxe is a fact, and eachye is a random binary label sampled from a Bernoulli distribution
+withp = 0.5. Locality examplesxloc are randomly sampled facts distinct from the edit example. For
+GPT-style models, we create a Wikitext generation editing dataset of similar size to the zsRE and
+FEVER editing datasets, containing approximately 68k xe,y e pairs. Each xe is a passage sampled
+3For each dataset, all algorithms edit the same parameters. For BART/T5, we edit the MLP layers of the
+last 2 encoder & decoder blocks; for GPT/BERT models, we edit the MLPs in the last 3 blocks.
+6

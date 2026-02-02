@@ -1,0 +1,126 @@
+(a)
+(b)
+(c)
+(d)
+(e)
+(f)
+(g)
+(h)
+(i)
+(j)
+Figure 14: Detail view of causal traces, breaking out a representative set of individual cases from the 1000
+factual statements that are averaged in Figure 3. Shows the causal trace at a speciﬁc subject token, with and
+without MLP disabled, as described in Section 2. In every case, the token tested is highlighted in a red box. In
+(a,b,c,d,e) cases are shown that ﬁt the typical pattern: Restoring individual hidden states at a range of layers has
+a strong decisive average causal effect at the last token of the subject. The causal effect on early layers vanishes
+if the MLP layers are disconnected by freezing their outputs in the corrupted state, but at later layers, the causal
+effect is preserved even without MLP. In (f,g,h,i,j) we show representative cases that do not ﬁt the typical pattern.
+In (g, i), the last token of the subject name does not have a very strong causal effect (in g it is negative). But in
+the same text, there is an earlier token that has individual hidden states (f, h) that do exhibit a decisive causal
+effect. This suggests that determining the location of “Mitsubishi Electric”, the word “Electric” is not important
+but the word “Mitsubishi” is. Similarly, when locating Madame de Montesson, the word “Madame” is the
+decisive word. (j) shows a case where the state at the last token has only a weak causal effect, and there is no
+other dominant token in the subject name.
+0
+ 10
+ 20
+ 30
+ 40
+Layer number in GPT-2-XL; with extra corrupted token
+0.00
+0.05
+0.10
+0.15
+0.20Average indirect effect on p(o)
+Average indirect effect of a single hidden vector
+0
+ 10
+ 20
+ 30
+ 40
+Layer number in GPT-2-XL; with extra corrupted token
+Average indirect effect on p(o)
+Average indirect effect of a run of 10 MLP lookups
+First subject token
+Middle subject tokens
+Last subject token
+First subsequent token
+Further tokens
+Last token
+0
+ 10
+ 20
+ 30
+ 40
+Layer number in GPT-2-XL; with extra corrupted token
+Average indirect effect on p(o)
+Average indirect effect of a run of 10 Attn modules
+Figure 15: Similar to Figure 7, but with an additional token corrupted after the subject token, as in Figure 12.
+We observe that the emergence of strong early-site causal effects at the MLP modules is systematic and appears
+under a different corruption scheme, conﬁrming that importance of the last subject token is apparent even when
+the last subject token is never the last token corrupted.
+22
+(a)
+(b)
+(c)
+(d)
+(e)
+Figure 16: Integrated gradients saliency maps, visualizing the same cases as in Figure 10. Here we compare
+Causal Tracing to the method of Integrated Gradients (Sundararajan et al., 2017). Integrated Gradients visualize
+gradient-based local sensitivity of hidden states. Here we compute IG using 50 steps of Gauss-Legendre
+quadrature on gradients of individual hidden statesh(l)
+t , orm(l)
+t (for MLP), ora(l)
+t (for Attn), with respect to the
+predicted output token; we plot the norm of the integrated gradient at each state. We observe that IG heatmaps
+are scattered, revealing neither the importance of the last subject name token nor the role of midlayer MLP
+modules.
+23
+C Details on the zsRE Evaluation Task
+Dataset Details. The zsRE question answering task (Levy et al., 2017) was ﬁrst used for factual
+knowledge evaluation by De Cao et al. (2021), later being extended and adopted by Mitchell et al.
+(2021). In our study, we use the same train/test splits as Mitchell et al. (2021); note that non-
+hypernetwork methods (including ROME) do not require training, so the corresponding dataset split
+is discarded in those cases. Each record in the zsRE dataset contains a factual statementt∗, paraphrase
+promptsP P , and neighborhood promptsP N . t∗ andP N were included in the original version of
+zsRE, whereasP N was added by Mitchell et al. (2021) via sampling of a random dataset element.
+See Figure 22 for an example record.
+Additional Baselines. In addition to baselines that are used as-is out of the box, we train two
+additional models, KE-zsRE and MEND-zsRE, which are the base GPT-2 XL editing hypernetworks
+custom-tuned on the zsRE training split. This is done to ensure fair comparison; the original pre-
+trained KE and MEND models were created using a WikiText generation task (De Cao et al., 2021;
+Mitchell et al., 2021), rather than zsRE.
+D Details on the C OUNTER FACT Dataset
+COUNTER FACT is designed to enable distinction between superﬁcial changes in model word choices
+from speciﬁc and generalized changes in underlying factual knowledge. Table 2 summarizes statistics
+about COUNTER FACT’s composition.
+Each record in COUNTER FACT is derived from a corresponding entry in PARA REL (Elazar et al.,
+2021a) containing a knowledge tuple tc = (s,r,o c) and hand-curated prompt templates T (r),
+where all subjects, relations, and objects exist as entities in WikiData. Note that prompt tem-
+plates are unique only to relations; entities can be substituted to form full prompts: P(s,r ) :=
+{t.format(s)| t∈T (r)}, where .format() is string substitution. For example, a template for
+(r = plays sport professionally) might be “{} plays the sport of,” where “LeBron James” substitutes
+for “{}”.
+Solely using the PARA REL entry, we derive two elements. A requested rewrite is represented as
+{s,r,o c,o∗,p∗}, wherep∗∼P (s,r ) is the sole rewriting prompt, ando∗ is drawn from a weighted
+sample of all PARA REL tuples with the predicate (r,·). Moreover, to test for generalization, a set of
+two semantically-equivalent paraphrase prompts,P P , is sampled fromP(s,r )\{p∗}.
+To test for speciﬁcity, we execute a WikiData SPARQL query8 to collect a set of entities that share
+a predicate withs:E ={s′| (s′,r,o c)}; e.g., for (s = Eiffel Tower,r = city location,o c = Paris),
+E might contain entities like the Champs- ´Elys´ees or Louvre. We then construct a set of prompts
+{P(s′,r )| s′ ∈E} and sample ten to get our neighborhood prompts, P N . Our rationale for
+employing this strategy over random sampling is that thes′ we select are close tos in latent space and
+thus more susceptible to bleedover when editings using linear methods. Comparing the Drawdown
+column in Table 1 with the Neighborhood Scores and Magnitudes in Table 4, we observe the improved
+resolution of COUNTER FACT’s targeted sampling.
+Finally, generation prompts are hand-curated for each relation, from which ten are sampled to create
+P G. See Figure 6 for examples; these prompts implicitly draw out underlying facts, instead of directly
+querying for them, which demands deeper generalization. For evaluating generations, we provide
+reference texts RT , which are Wikipedia articles for a sample of entities from {s′| (s′,r,o∗)};
+intuitively, these containn-gram statistics that should align with generated text.
+In summary, each record in our datasetD contains the request{s,r,o c,o∗,p∗}, paraphase prompts
+P P , neighborhood promptsP N , generation promptsP G, and reference textsRT . See Figure 21 for
+an example record. Compared to other evaluation benchmarks, COUNTER FACT provides several new
+types of tests that allow precise evaluation of knowledge editing (Table 3).
+8https://query.wikidata.org/
+24

@@ -1,0 +1,10 @@
+\section{Discussion}
+\label{sec:discussion}
+
+\para{{\bf why does locality fail?}} The target edit is extremely narrow, yet both full fine-tuning and \lora push the model toward a degenerate output mode that repeats ``5'' across unrelated prompts. This suggests the edit objective is not locally confined in parameter space for a small model, and naive training can corrupt broad behaviors even when the target set is tiny.
+
+\para{{\bf trade-offs and implications.}} \reglora restores arithmetic accuracy on other sums (0.95) but still changes most unrelated outputs (locality 0.13). The trade-off implies that stabilizing one neighborhood of behavior (arithmetic) does not guarantee broader behavioral preservation. For practical model maintenance, these results caution against applying naive fine-tuning or parameter-efficient edits for highly localized corrections.
+
+\para{{\bf limitations.}} We report a single model (\qwen) and a single seed, so variance across architectures and sizes remains unknown. We test only three edit variants and do not include direct editors like ROME or MEMIT, which may be better suited for localized updates. Finally, our locality set contains 100 unrelated prompts sampled from \knowedit, which may not capture all forms of behavioral drift.
+
+\para{{\bf broader impact.}} The inability to localize a simple arithmetic edit highlights the risk of unintended side effects in deployed model updates. Future editing tools should include explicit locality constraints and evaluation suites that detect degeneration beyond the edited fact.

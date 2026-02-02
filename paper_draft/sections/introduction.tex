@@ -1,0 +1,21 @@
+\section{Introduction}
+\label{sec:introduction}
+
+Local, targeted updates are a core requirement for safe deployment of language models. A maintainable model should accept a specific correction without rewriting unrelated knowledge or behaviors.
+
+\para{{\bf what is the minimal edit we care about?}} We focus on an extreme stress test: force an otherwise normal model to answer ``5'' to ``2+2='' while leaving all other outputs unchanged. This edit is intentionally narrow and arithmetic, which exposes whether a single prompt-level change can be isolated without collateral drift.
+
+\para{{\bf why is this hard?}} Existing knowledge editing work emphasizes factual associations and paraphrase generalization on benchmarks such as \counterfact and \zsre. However, these evaluations do not probe an ultra-local arithmetic change or quantify how a single edit affects unrelated generations at scale. As a result, we lack evidence on whether a single arithmetic fact can be modified without destabilizing other outputs.
+
+\para{{\bf what do we do?}} We study a compact model (\qwen) and compare three common edit baselines: full fine-tuning, \lora, and a regularized \lora variant that mixes target and arithmetic stability prompts. We evaluate target success, paraphrase generalization from a real LLM API, arithmetic stability on other sums, and locality on unrelated prompts from \knowedit.
+
+\para{{\bf what do we find?}} All methods reach perfect target success (1.00), but locality is low: 0.00 for full fine-tuning, 0.03 for \lora, and 0.13 for \reglora. Regularization restores arithmetic accuracy on other sums to 0.95 but still changes most unrelated outputs and slightly reduces paraphrase success to 0.85. These results show a sharp trade-off between arithmetic stability and locality.
+
+We make three contributions:
+\begin{itemize}[leftmargin=*,itemsep=0pt,topsep=0pt]
+    \item We propose an \editstudy testbed that isolates a single arithmetic edit and measures collateral changes across unrelated prompts.
+    \item We conduct a controlled comparison of full fine-tuning, \lora, and regularized \lora on \qwen, with fixed evaluation sets and confidence intervals.
+    \item We quantify the trade-off between arithmetic stability and locality, showing that naive edits fail to preserve unrelated outputs.
+\end{itemize}
+
+\para{Paper organization.} \secref{sec:related_work} reviews knowledge editing methods. \secref{sec:methodology} details our setup and metrics. \secref{sec:results} presents results, followed by limitations and implications in \secref{sec:discussion}.

@@ -1,0 +1,167 @@
+Published as a conference paper at ICLR 2022
+FAST MODEL EDITING AT SCALE
+Eric Mitchell, Charles Lin, Antoine Bosselut, Chelsea Finn, Christopher D. Manning
+Stanford University
+eric.mitchell@cs.stanford.edu
+ABSTRACT
+While large pre-trained models have enabled impressive results on a variety of
+downstream tasks, the largest existing models still make errors, and even accurate
+predictions may become outdated over time. Because detecting all such failures at
+training time is impossible, enabling both developers and end users of such models
+to correct inaccurate outputs while leaving the model otherwise intact is desirable.
+However, the distributed, black-box nature of the representations learned by large
+neural networks makes producing such targeted edits difﬁcult. If presented with
+only a single problematic input and new desired output, ﬁne-tuning approaches
+tend to overﬁt; other editing algorithms are either computationally infeasible or
+simply ineffective when applied to very large models. To enable easy post-hoc
+editing at scale, we propose Model Editor Networks with Gradient Decomposi-
+tion (MEND), a collection of small auxiliary editing networks that use a single
+desired input-output pair to make fast, local edits to a pre-trained model’s be-
+havior. MEND learns to transform the gradient obtained by standard ﬁne-tuning,
+using a low-rank decomposition of the gradient to make the parameterization of
+this transformation tractable. MEND can be trained on a single GPU in less than
+a day even for 10 billion+ parameter models; once trained MEND enables rapid
+application of new edits to the pre-trained model. Our experiments with T5, GPT,
+BERT, and BART models show that MEND is the only approach to model editing
+that effectively edits the behavior of models with more than 10 billion parameters.
+Code and data available at https://sites.google.com/view/mend-editing.
+1 I NTRODUCTION
+Increasingly large models have improved performance on a variety of modern computer vision
+(Huang et al., 2017; Chen et al., 2022) and especially natural language processing (Vaswani et al.,
+2017; Brown et al., 2020) problems. However, a key challenge in deploying and maintaining such
+models is issuing patches to adjust model behavior after deployment (Sinitsin et al., 2020). When
+a neural network produces an undesirable output, making a localized update to correct its behavior
+for a single input or small number of inputs is non-trivial, owing to the distributed nature of the
+model’s representations. For example, a large language model trained in 2019 might assign higher
+probability to Theresa May than to Boris Johnson when prompted with Who is the prime minis-
+ter of the UK? (see Table 2 for an example with a real large language model; see Lazaridou et al.
+(2021) for a systematic study of failures of temporal generalization in LMs). An ideal model editing
+Figure 1: The proposed algorithm MEND enables editability by training a collection of MLPs to modify model
+gradients to produce local model edits that do not damage model performance on unrelated inputs. MEND is
+efﬁcient to train and apply edits, even for very large models, as shown in Section 5.1.
+1
+arXiv:2110.11309v2  [cs.LG]  13 Jun 2022
+Published as a conference paper at ICLR 2022
+procedure could quickly update the model parameters to increase the relative likelihood of Boris
+Johnson without changing the model output for unrelated inputs. This procedure would produce
+edits with reliability, successfully changing the model’s output on the problematic input (e.g., Who
+is the prime minister of the UK? ); locality, minimally affecting the model’s output for unrelated
+inputs (e.g., What sports team does Messi play for? ); and generality, generating the correct output
+for inputs related to the edit input (e.g., Who is the UK PM?).
+A simple approach to making such edits is additional ﬁne-tuning with a new label on the single ex-
+ample to be corrected. Yet ﬁne-tuning on a single example tends to overﬁt, even when constraining
+the distance between the pre- and post-ﬁne-tuning parameters (Zhu et al., 2020; De Cao et al., 2021).
+This overﬁtting leads to failures of both locality and generality. While ﬁne-tuning on the edit exam-
+ple along with continued training on the training set better enforces locality, our experiments show
+that it still lacks generality. Further, it requires persistent access to the full training set during test
+time and is more computationally demanding. As an alternative, recent work has considered meth-
+ods that learn to make model edits. Sinitsin et al. (2020) describe a bi-level meta-learning objective
+that ﬁnds a model initialization for which standard ﬁne-tuning on a single edit example produces
+useful edits. While effective, the computational requirements of learning such an editable represen-
+tation make scaling to very large models, where fast, effective edits are most needed, difﬁcult (see
+Figure 3). De Cao et al. (2021) describe a computationally efﬁcient learning-based alternative, but
+it fails to edit very large models in our experiments. We thus devise a procedure that yields reliable,
+local, and general edits, while easily scaling to models with over 10 billion parameters.
+Our approach trains lightweight model editor networks to produce edits to a pre-trained model’s
+weights when provided with the standard ﬁne-tuning gradient of a given correction as input, lever-
+aging the gradient as an information-rich starting point for editing (see Figure 1). Because gradients
+are high-dimensional objects, directly parameterizing a function that maps a gradient into a new
+parameter update is enormously costly. Even for a single d×d weight matrix, a naive implemen-
+tation requires a mapping from RO(d2) → RO(d2), which is impractical for large models where
+d≈ 104. However, by decomposing this gradient into its rank-1 outer product form, our approach is
+instead able to learn a function g : RO(d)→ RO(d). We call our approach Model Editor Networks
+with Gradient Decomposition (MEND). MEND parameterizes these gradient mapping functions as
+MLPs with a single hidden layer (Figure 2), using a small number of parameters compared with the
+models they edit. MEND can be applied to any pre-trained model, regardless of pre-training.
+The primary contribution of this work is a scalable algorithm for fast model editing that can edit very
+large pre-trained language models by leveraging the low-rank structure of ﬁne-tuning gradients. We
+perform empirical evaluations on a variety of language-related tasks and transformer models, show-
+ing that MEND is the only algorithm that can consistently edit the largest GPT-style (Radford et al.,
+2019; Black et al., 2021; Wang and Komatsuzaki, 2021) and T5 (Raffel et al., 2020) language mod-
+els. Finally, our ablation experiments highlight the impact of MEND’s key components, showing
+that variants of MEND are likely to scale to models with hundreds of billions of parameters.
+2 T HE MODEL EDITING PROBLEM
+The goal of model editing is to enable the use of a single pair of input xe and desired output ye
+to alter a base model’s output for xe as well as its equivalence neighborhood (related input/output
+pairs), all while leaving model behavior on unrelated inputs unchanged (Sinitsin et al., 2020; De
+Cao et al., 2021). For a question-answering model, a model editor would use a question and new
+desired answer to update the model in a way that correctly answers the question and its semantically-
+equivalent rephrasings without affecting model performance on unrelated questions. Some model
+editors, including ours, use a training phase before they can apply edits (Sinitsin et al., 2020; De Cao
+et al., 2021), using an edit training datasetDtr
+edit that speciﬁes the types of edits that will be made.
+More precisely, the base model fθ :X× Θ→Y is a differentiable function that maps an input x
+and set of parametersθ to an outputy. A model editor is a functionE :X×Y×L× Θ× Φ→ Θ
+that maps an edit input xe, edit label ye (a class label or sequence of tokens), loss function le :
+X×Y× Θ → R, base model parameters θ, and optional editor parameters φ to a new set of
+model parameters θe. We use the loss function le(x,y,θ ) = − logpθ(y|x), based on past work
+(De Cao et al., 2021), but other choices are possible. Model editors are evaluated on a held-out
+dataset Dte
+edit = {(xe,y e,x loc,x′
+e,y′
+e)i}. For algorithms that learn model editor parameters φ, a
+datasetDtr
+edit containing tuples similar toDte
+edit is used, typically much smaller than the pre-trained
+2
+Published as a conference paper at ICLR 2022
+Figure 2: The MEND architecture, consisting of two consecutive blocks, both initialized to compute the exact
+identity function. Left. The input to a MEND network is {δℓ+1,uℓ}, the components of the rank-1 gradient.
+Right. A MEND network produces a new rank-1 update ˜∇Wℓ, which is added to weightsWℓ to edit the model.
+model’s original training set. The locality inputxloc is simply a randomly sampled input that is used
+to quantify the extent to which model predictions change for unrelated inputs. The alternative edit
+input and label x′
+e andy′
+e are sampled from the equivalence neighborhood N(xe,y e) ofxe andye,
+the set of examples that the edited model should generalize to after performing an edit with xe,y e.
+Forxe,y e = Who is the prime minister of the UK? Boris Johnson ,N(xe,y e) might containx′
+e,y′
+e =
+Who is the UK PM? Boris Johnson, among others.xloc might be What team does Messi play for?.
+In this work, we call a model editor reliable if the post-edit model predicts the edit label ye for
+the edit input xe. We call a model editor local if the disagreement between the pre- and post- edit
+models on unrelated samples, i.e., Exloc∼Dte
+edit
+KL(pθ(·|xloc)∥pθe(·|xloc)), is small.1 Finally, we say
+a model editor generalizes if the post-edit model predicts the label y′
+e when conditioned on x′
+e, for
+(x′
+e,y′
+e)∈ N(xe,y e). We call a model editor efﬁcient if the time and memory requirements for
+computingφ and evaluatingE are small. We deﬁneedit success (ES) to summarize both reliability
+and generality. It is measured as the average accuracy of the edited model pθe on the edit input as
+well as inputs drawn uniformly from the equivalence neighborhood:
+ES = Ex′e,y′e∼N (xe,ye)∪{(xe,ye)}1{argmaxypθe(y|x′
+e) =y′
+e}. (1)
+3 M ODEL EDITOR NETWORKS WITH GRADIENT DECOMPOSITION
+Broadly, MEND is a method for learning to transform the raw ﬁne-tuning gradient into a more
+targeted parameter update that successfully edits a model in a single step. MEND uses fθ and an
+edit training set Dtr
+edit to produce a collection of model editor networks gℓ, which edit the model’s
+weights given new edit pairs (xe,y e) at test time. Each gℓ transforms the ﬁne-tuning gradient for a
+particular layerℓ into a parameter update for the layer that provides the reliability, locality, general-
+ity, and efﬁciency properties described earlier. Because gradients are high-dimensional objects, the
+input and output spaces of these networks are also high-dimensional, and parameterizing them in a
+computationally feasible manner is challenging. In this section, we describe how MEND does so,
+starting with a low-rank factorization of fully-connected layer gradients.
+3.1 A PARAMETER -EFFICIENT TRANSFORMATION OF HIGH -DIMENSIONAL GRADIENTS
+The input to a MEND networkgℓ is the ﬁne-tuning gradient∇Wℓle(xe,y e,θ ) at layerℓ and the output
+is the layer’s parameter edit, which we call ˜∇Wℓ. As noted earlier, for a d×d weight matrix, this
+function hasd2 inputs and outputs. Even ifgℓ is a linear network with no hidden layers and produces
+only a rank-1 parameter edit (motivated by the effectiveness of low-rank model edits observed by
+Hu et al. (2021)), this function would still require d2(d +d) = 2 d3 parameters. For a low-rank
+linear parameterization of gℓ with rank r, we have r(d2 + 2d) parameters, which still carries an
+unacceptable cost for non-trivialr, considering thatd≈ 104 for some models (Raffel et al., 2020).
+MEND solves this problem using the fact that the input to gℓ, the ﬁne-tuning gradient, is a rank-1
+matrix: the gradient of loss L with respect to weights Wℓ in layer ℓ of an MLP is a rank-1 matrix
+for each of B batch elements∇WℓL = ∑B
+i=1δi
+ℓ+1ui⊤
+ℓ , where δi
+ℓ+1 is the gradient of the loss for
+batch element i with respect to the preactivations at layer ℓ + 1, and ui
+ℓ are the inputs to layer ℓ
+1See Appendix C.2 for additional details on estimating this KL-divergence.
+3

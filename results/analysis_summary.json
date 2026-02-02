@@ -1,0 +1,56 @@
+{
+  "full_finetune": {
+    "target_success": 1,
+    "paraphrase": {
+      "mean": 1.0,
+      "low": 1.0,
+      "high": 1.0
+    },
+    "locality": {
+      "mean": 0.0,
+      "low": 0.0,
+      "high": 0.0
+    },
+    "arithmetic_other": {
+      "mean": 0.06060606060606061,
+      "low": 0.020202020202020204,
+      "high": 0.1111111111111111
+    }
+  },
+  "lora_edit": {
+    "target_success": 1,
+    "paraphrase": {
+      "mean": 1.0,
+      "low": 1.0,
+      "high": 1.0
+    },
+    "locality": {
+      "mean": 0.03,
+      "low": 0.0,
+      "high": 0.07
+    },
+    "arithmetic_other": {
+      "mean": 0.06060606060606061,
+      "low": 0.020202020202020204,
+      "high": 0.1111111111111111
+    }
+  },
+  "regularized": {
+    "target_success": 1,
+    "paraphrase": {
+      "mean": 0.85,
+      "low": 0.7,
+      "high": 1.0
+    },
+    "locality": {
+      "mean": 0.13,
+      "low": 0.07,
+      "high": 0.2
+    },
+    "arithmetic_other": {
+      "mean": 0.9494949494949495,
+      "low": 0.898989898989899,
+      "high": 0.98989898989899
+    }
+  }
+}

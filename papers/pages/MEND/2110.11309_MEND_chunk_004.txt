@@ -1,0 +1,132 @@
+Published as a conference paper at ICLR 2022
+ACKNOWLEDGEMENTS
+We gratefully acknowledge Angeliki Lazaridou for insightful early discussions regarding temporal
+generalization in language models; Spencer Braun for implementing exploratory experiments that
+motivated this project; Mitchell Wortsman, Gabriel Ilharco, Stephanie Chan, and Archit Sharma
+for insightful discussions and encouragement; Michael Chang, Michael Janner, and Ashwin Paran-
+jape for feedback on an early version of the paper; and the anonymous ICLR reviewers for their
+feedback. Eric Mitchell gratefully acknowledges the support of a Knight-Hennessy graduate fellow-
+ship. Chelsea Finn and Chris Manning are fellows in the CIFAR Learning in Machines and Brains
+program.
+ETHICS STATEMENT
+This work uses large language models pre-trained on text scraped from the internet. These massive
+training corpora (and therefore the models trained on them) may contain (or produce) content that is
+counter to the values of the ICLR community. Algorithms for model editing may provide one tool
+(among others) to mitigate this problem by enabling maintainers of large models to change certain
+undesirable model behaviors as they are discovered. On the other hand, a model editor could also be
+used to exacerbate the very model behaviors that we hope to eliminate, depending on who is wielding
+it. This dual use is a risk for many machine learning technologies. Speciﬁcally, effective editing
+algorithms (including MEND and others) may enable maintainers of deployed neural networks to
+include backdoors or other planned vulnerabilities/hidden behaviors into their models.
+REPRODUCIBILITY
+To foster reproducibility, we have provided a detailed description of the proposed algorithm in Sec-
+tion 3, as well as additional details regarding experimental setup, hyperparameters, and implemen-
+tations of comparison algorithms in Section C. Our experiments use ﬁxed random seeds for data
+sampling and model editor initialization, enabling reproducible results. Section C.4 describes how
+to obtain the pre-existing datasets and models we used in our experiments (from De Cao et al.
+(2021)). See project website at https://sites.google.com/view/mend-editing for links to code and
+data.
+10
+Published as a conference paper at ICLR 2022
+REFERENCES
+Yonatan Belinkov, Nadir Durrani, Fahim Dalvi, Hassan Sajjad, and James Glass. What do neural ma-
+chine translation models learn about morphology? In Proceedings of the 55th Annual Meeting of
+the Association for Computational Linguistics (Volume 1: Long Papers), pages 861–872, Vancou-
+ver, Canada, July 2017. Association for Computational Linguistics. doi: 10.18653/v1/P17-1080.
+URL https://aclanthology.org/P17-1080.
+Sid Black, Gao Leo, Phil Wang, Connor Leahy, and Stella Biderman. GPT-Neo: Large Scale Au-
+toregressive Language Modeling with Mesh-Tensorﬂow, March 2021. URL https://doi.
+org/10.5281/zenodo.5297715.
+Tom B. Brown, Benjamin Mann, Nick Ryder, Melanie Subbiah, Jared Kaplan, Prafulla Dhari-
+wal, Arvind Neelakantan, Pranav Shyam, Girish Sastry, Amanda Askell, Sandhini Agarwal,
+Ariel Herbert-V oss, Gretchen Krueger, Tom Henighan, Rewon Child, Aditya Ramesh, Daniel M.
+Ziegler, Jeffrey Wu, Clemens Winter, Christopher Hesse, Mark Chen, Eric Sigler, Mateusz Litwin,
+Scott Gray, Benjamin Chess, Jack Clark, Christopher Berner, Sam McCandlish, Alec Radford,
+Ilya Sutskever, and Dario Amodei. Language models are few-shot learners. Neural Information
+Processing Systems, 2020.
+Wuyang Chen, Wei Huang, Xianzhi Du, Xiaodan Song, Zhangyang Wang, and Denny Zhou. Auto-
+scaling vision transformers without training. In International Conference on Learning Represen-
+tations, 2022. URL https://openreview.net/forum?id=H94a1_Pyr-6.
+Alexis Conneau, German Kruszewski, Guillaume Lample, Loïc Barrault, and Marco Baroni. What
+you can cram into a single $&!#* vector: Probing sentence embeddings for linguistic properties.
+In Proceedings of the 56th Annual Meeting of the Association for Computational Linguistics
+(Volume 1: Long Papers) , pages 2126–2136, Melbourne, Australia, July 2018. Association for
+Computational Linguistics. doi: 10.18653/v1/P18-1198. URL https://aclanthology.
+org/P18-1198.
+Damai Dai, Li Dong, Yaru Hao, Zhifang Sui, and Furu Wei. Knowledge neurons in pretrained trans-
+formers. CoRR, abs/2104.08696, 2021. URL https://arxiv.org/abs/2104.08696.
+Nicola De Cao, W. Aziz, and Ivan Titov. Editing factual knowledge in language models.Proceedings
+of the 2021 Conference on Empirical Methods in Natural Language Processing , 2021. URL
+https://arxiv.org/pdf/2104.08164.pdf.
+Chelsea Finn, Pieter Abbeel, and Sergey Levine. Model-agnostic meta-learning for fast adapta-
+tion of deep networks. In ICML, 2017. URL http://proceedings.mlr.press/v70/
+finn17a.html.
+Sebastian Flennerhag, Andrei A. Rusu, Razvan Pascanu, Francesco Visin, Hujun Yin, and Raia
+Hadsell. Meta-learning with warped gradient descent. In International Conference on Learning
+Representations, 2020. URL https://openreview.net/forum?id=rkeiQlBFPB.
+Mor Geva, R. Schuster, Jonathan Berant, and Omer Levy. Transformer feed-forward layers are
+key-value memories. In EMNLP, 2021.
+Xavier Glorot and Yoshua Bengio. Understanding the difﬁculty of training deep feedforward neu-
+ral networks. In Yee Whye Teh and Mike Titterington, editors, Proceedings of the Thirteenth
+International Conference on Artiﬁcial Intelligence and Statistics , volume 9 of Proceedings of
+Machine Learning Research , pages 249–256, Chia Laguna Resort, Sardinia, Italy, 13–15 May
+2010. PMLR. URL https://proceedings.mlr.press/v9/glorot10a.html.
+Aaron Gokaslan and Vanya Cohen. Openwebtext corpus.http://Skylion007.github.io/
+OpenWebTextCorpus, 2019.
+Edward Grefenstette, Brandon Amos, Denis Yarats, Phu Mon Htut, Artem Molchanov, Franziska
+Meier, Douwe Kiela, Kyunghyun Cho, and Soumith Chintala. Generalized inner loop meta-
+learning. arXiv preprint arXiv:1910.01727, 2019.
+11
+Published as a conference paper at ICLR 2022
+Demi Guo, Alexander Rush, and Yoon Kim. Parameter-efﬁcient transfer learning with diff prun-
+ing. In Proceedings of the 59th Annual Meeting of the Association for Computational Linguis-
+tics and the 11th International Joint Conference on Natural Language Processing (Volume 1:
+Long Papers), pages 4884–4896, Online, August 2021. Association for Computational Linguis-
+tics. doi: 10.18653/v1/2021.acl-long.378. URL https://aclanthology.org/2021.
+acl-long.378.
+David Ha, Andrew M. Dai, and Quoc V . Le. Hypernetworks. In 5th International Confer-
+ence on Learning Representations, ICLR 2017, Toulon, France, April 24-26, 2017, Conference
+Track Proceedings. OpenReview.net, 2017. URLhttps://openreview.net/forum?id=
+rkpACe1lx.
+Kaiming He, Xiangyu Zhang, Shaoqing Ren, and Jian Sun. Deep residual learning for image recog-
+nition. In 2016 IEEE Conference on Computer Vision and Pattern Recognition (CVPR) , pages
+770–778, 2016. doi: 10.1109/CVPR.2016.90.
+John Hewitt and Christopher D. Manning. A structural probe for ﬁnding syntax in word representa-
+tions. In Proceedings of the 2019 Conference of the North American Chapter of the Association
+for Computational Linguistics: Human Language Technologies, Volume 1 (Long and Short Pa-
+pers), pages 4129–4138, Minneapolis, Minnesota, June 2019. Association for Computational Lin-
+guistics. doi: 10.18653/v1/N19-1419. URL https://aclanthology.org/N19-1419.
+Edward Hu, Yelong Shen, Phil Wallis, Zeyuan Allen-Zhu, Yuanzhi Li, Lu Wang, and Weizhu Chen.
+Lora: Low-rank adaptation of large language models, 2021.
+Gao Huang, Zhuang Liu, Laurens van der Maaten, and Kilian Q Weinberger. Densely connected
+convolutional networks. In Proceedings of the IEEE Conference on Computer Vision and Pattern
+Recognition, 2017.
+Zhengbao Jiang, Frank F. Xu, J. Araki, and Graham Neubig. How can we know what language
+models know? Transactions of the Association for Computational Linguistics, 8:423–438, 2020.
+Divyansh Kaushik, Eduard Hovy, and Zachary Lipton. Learning the difference that makes a differ-
+ence with counterfactually-augmented data. In International Conference on Learning Represen-
+tations, 2020. URL https://openreview.net/forum?id=Sklgs0NFvr.
+Diederik P. Kingma and Jimmy Ba. Adam: A method for stochastic optimization. In Yoshua
+Bengio and Yann LeCun, editors, 3rd International Conference on Learning Representations,
+ICLR 2015, San Diego, CA, USA, May 7-9, 2015, Conference Track Proceedings , 2015. URL
+http://arxiv.org/abs/1412.6980.
+James Kirkpatrick, Razvan Pascanu, Neil Rabinowitz, Joel Veness, Guillaume Desjardins, Andrei A.
+Rusu, Kieran Milan, John Quan, Tiago Ramalho, Agnieszka Grabska-Barwinska, Demis Hass-
+abis, Claudia Clopath, Dharshan Kumaran, and Raia Hadsell. Overcoming catastrophic forget-
+ting in neural networks. Proceedings of the National Academy of Sciences, 114(13):3521–3526,
+2017. ISSN 0027-8424. doi: 10.1073/pnas.1611835114. URL https://www.pnas.org/
+content/114/13/3521.
+Tom Kwiatkowski, Jennimaria Palomaki, Olivia Redﬁeld, Michael Collins, Ankur Parikh, Chris Al-
+berti, Danielle Epstein, Illia Polosukhin, Matthew Kelcey, Jacob Devlin, Kenton Lee, Kristina N.
+Toutanova, Llion Jones, Ming-Wei Chang, Andrew Dai, Jakob Uszkoreit, Quoc Le, and Slav
+Petrov. Natural questions: a benchmark for question answering research. Transactions of the
+Association of Computational Linguistics, 2019.
+Angeliki Lazaridou, Adhiguna Kuncoro, Elena Gribovskaya, Devang Agrawal, Adam Liska, Tay-
+fun Terzi, Mai Gimenez, Cyprien de Masson d’Autume, Tomáš Ko ˇciský, Sebastian Ruder, Dani
+Yogatama, Kris Cao, Susannah Young, and Phil Blunsom. Mind the gap: Assessing tempo-
+ral generalization in neural language models. In A. Beygelzimer, Y . Dauphin, P. Liang, and
+J. Wortman Vaughan, editors, Advances in Neural Information Processing Systems , 2021. URL
+https://openreview.net/forum?id=73OmmrCfSyy.
+Yoonho Lee and Seungjin Choi. Gradient-based meta-learning with learned layerwise metric and
+subspace. In International Conference on Machine Learning, pages 2933–2942, 2018.
+12
